@@ -12,7 +12,14 @@ export const getToken = () => localStorage.getItem(TOKEN_KEY);
 
 export const getUser = (): AuthUser | null => {
   const raw = localStorage.getItem(USER_KEY);
-  return raw ? (JSON.parse(raw) as AuthUser) : null;
+  if (!raw || raw === "undefined") return null;
+  try {
+    return JSON.parse(raw) as AuthUser;
+  } catch (err) {
+    console.error("Failed to parse user from localStorage", err);
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
 };
 
 export const setAuth = (token: string, user: AuthUser) => {
