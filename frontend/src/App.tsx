@@ -1,7 +1,12 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import VocabularyPage from "./pages/VocabularyPage";
+import GrammarPage from "./pages/GrammarPage";
+import ListeningPage from "./pages/ListeningPage";
+import SpeakingPage from "./pages/SpeakingPage";
+import ProfilePage from "./pages/ProfilePage";
 import LessonDetailPage from "./pages/LessonDetailPage";
 import QuizPage from "./pages/QuizPage";
 import ProgressPage from "./pages/ProgressPage";
@@ -11,7 +16,7 @@ import { ProtectedRoute } from "./router/ProtectedRoute";
 const App = () => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/vocabulary" replace />} />
+      <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
@@ -20,6 +25,38 @@ const App = () => {
         element={
           <ProtectedRoute>
             <VocabularyPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/grammar"
+        element={
+          <ProtectedRoute>
+            <GrammarPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/listening"
+        element={
+          <ProtectedRoute>
+            <ListeningPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/speaking"
+        element={
+          <ProtectedRoute>
+            <SpeakingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />
