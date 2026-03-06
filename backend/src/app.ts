@@ -20,15 +20,20 @@ export const createApp = () => {
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
   app.use("/api/auth", authRoutes);
-  app.use("/api/topics", topicRoutes);
-  app.use("/api/lessons", lessonRoutes);
+  // app.use("/api/topics", topicRoutes);
+  // app.use("/api/lessons", lessonRoutes);
   app.use("/api/vocabulary", vocabularyRoutes);
   app.use("/api/grammar", grammarRoutes);
   app.use("/api/quiz", quizRoutes);
   app.use("/api/questions", questionRoutes);
   app.use("/api/progress", progressRoutes);
 
+  app.use("/api/grammar-topics", topicRoutes); 
+  app.use("/api/grammar-lessons", lessonRoutes);
   app.use(errorHandler);
 
   return app;
 };
+// backend/src/app.ts
+
+// Đăng ký đúng prefix để ra được URL như yêu cầu

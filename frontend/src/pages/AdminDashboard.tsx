@@ -58,7 +58,7 @@ const AdminDashboard = () => {
 
   const loadAdminData = async () => {
     try {
-      const [topicRes, quizRes] = await Promise.all([api.get("/topics/all"), api.get("/quiz/all")]);
+      const [topicRes, quizRes] = await Promise.all([api.get("/grammar-topics/all"), api.get("/quiz/all")]);
       setTopics(topicRes.data.data || []);
       setQuizzes(quizRes.data.data || []);
       if (topicRes.data.data?.length > 0 && !lessonTopicId) setLessonTopicId(topicRes.data.data[0]._id);
@@ -70,7 +70,8 @@ const AdminDashboard = () => {
 
   const loadLessons = async (topicId: string) => {
     if (!topicId) return;
-    const res = await api.get(`/lessons/topic/${topicId}`);
+    // const res = await api.get(`/lessons/topic/${topicId}`);
+    const res = await api.get(`/grammar-lessons/topic/${topicId}`);
     const data = res.data.data || [];
     setLessons(data);
     if (data.length > 0) setVocabLessonId(data[0]._id);
@@ -123,11 +124,11 @@ const AdminDashboard = () => {
   };
 
   const navItems = [
-    { id: "topics",    label: "Chủ Đề",     icon: <Layout size={24} /> },
-    { id: "lessons",   label: "Bài Học",     icon: <BookOpen size={24} /> },
-    { id: "vocabulary",label: "Từ Vựng",     icon: <Layers size={24} /> },
-    { id: "quizzes",   label: "Bài Kiểm Tra",icon: <List size={24} /> },
-    { id: "questions", label: "Câu Hỏi",     icon: <HelpCircle size={24} /> },
+    { id: "topics", label: "Chủ Đề", icon: <Layout size={24} /> },
+    { id: "lessons", label: "Bài Học", icon: <BookOpen size={24} /> },
+    { id: "vocabulary", label: "Từ Vựng", icon: <Layers size={24} /> },
+    { id: "quizzes", label: "Bài Kiểm Tra", icon: <List size={24} /> },
+    { id: "questions", label: "Câu Hỏi", icon: <HelpCircle size={24} /> },
   ];
 
   const logout = () => { clearAuth(); navigate("/login"); };
@@ -262,7 +263,7 @@ const AdminDashboard = () => {
                 </div>
                 {!editTopicId ? (
                   <button
-                    onClick={() => handleAction("POST", "/topics", { title: topicTitle, order: topicOrder, level: topicLevel, isPublished: true })}
+                    onClick={() => handleAction("POST", "/grammar-topics", { title: topicTitle, order: topicOrder, level: topicLevel, isPublished: true })}
                     style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
                   >
                     <Plus size={18} /> Thêm mới
@@ -270,7 +271,7 @@ const AdminDashboard = () => {
                 ) : (
                   <div style={{ display: "flex", gap: "12px" }}>
                     <button
-                      onClick={() => handleAction("PATCH", `/topics/${editTopicId}`, { title: topicTitle, order: topicOrder, level: topicLevel })}
+                      onClick={() => handleAction("PATCH", `/grammar-topics/${editTopicId}`, { title: topicTitle, order: topicOrder, level: topicLevel })}
                       style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
                     >
                       <Save size={18} /> Lưu thay đổi
@@ -299,7 +300,7 @@ const AdminDashboard = () => {
                       </div>
                       <div style={{ display: "flex", gap: "4px" }}>
                         <button onClick={() => setEditTopicId(t._id)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b" }}><Edit2 size={15} /></button>
-                        <button onClick={() => handleAction("DELETE", `/topics/${t._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
+                        <button onClick={() => handleAction("DELETE", `/grammar-topics/${t._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
                       </div>
                     </div>
                   ))}
@@ -331,13 +332,13 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 {!editLessonId ? (
-                  <button onClick={() => handleAction("POST", "/lessons", { topicId: lessonTopicId, title: lessonTitle, order: lessonOrder, isPublished: true })}
+                  <button onClick={() => handleAction("POST", "/grammar-lessons", { topicId: lessonTopicId, title: lessonTitle, order: lessonOrder, isPublished: true })}
                     style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>
                     <Plus size={18} /> Thêm bài học
                   </button>
                 ) : (
                   <div style={{ display: "flex", gap: "12px" }}>
-                    <button onClick={() => handleAction("PATCH", `/lessons/${editLessonId}`, { title: lessonTitle, order: lessonOrder, topicId: lessonTopicId })}
+                    <button onClick={() => handleAction("PATCH", `/grammar-lessons/${editLessonId}`, { title: lessonTitle, order: lessonOrder, topicId: lessonTopicId })}
                       style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>
                       <Save size={18} /> Cập nhật
                     </button>
@@ -358,7 +359,7 @@ const AdminDashboard = () => {
                       <div style={{ flex: 1, fontWeight: 700, fontSize: "16px" }}>{l.title}</div>
                       <div style={{ display: "flex", gap: "4px" }}>
                         <button onClick={() => setEditLessonId(l._id)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b" }}><Edit2 size={15} /></button>
-                        <button onClick={() => handleAction("DELETE", `/lessons/${l._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
+                        <button onClick={() => handleAction("DELETE", `/grammar-lessons/${l._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
                       </div>
                     </div>
                   ))}
@@ -405,10 +406,32 @@ const AdminDashboard = () => {
                   <label style={labelStyle}>Phiên âm (Tùy chọn)</label>
                   <input style={inputStyle} placeholder="VD: /əˈkaʊntənt/" value={phonetic} onChange={e => setPhonetic(e.target.value)} />
                 </div>
-                <button onClick={() => handleAction("POST", "/vocabulary", { lessonId: vocabLessonId, word, meaning, example, level: phonetic })}
+                {/* <button onClick={() => handleAction("POST", "/vocabulary", { lessonId: vocabLessonId, word, meaning, example, level: phonetic })} //dang test
                   style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>
                   <Plus size={18} /> Lưu từ vựng
+                </button> */}
+                <button
+                  onClick={() => {
+                    if (!vocabLessonId) return alert("Bạn chưa chọn bài học!");
+                    if (!word || !meaning) return alert("Vui lòng nhập từ và nghĩa!");
+
+                    // Tự tìm Title và Level từ Topic đang được chọn để gửi đi
+                    const currentTopic = topics.find(t => t._id === lessonTopicId);
+                    handleAction("POST", "/vocabulary", {
+                      lessonId: vocabLessonId,
+                      word: word,
+                      meaning: meaning,
+                      example: example || "No example",
+                      topic: currentTopic?.title || "General Grammar", // Phải có trường này
+                      level: currentTopic?.level || "A1",           // Phải có trường này
+                      phonetic: phonetic,
+                    });
+                  }}
+                // style...
+                >
+                  <Plus size={18} /> Lưu từ vựng
                 </button>
+
               </div>
             </motion.div>
           )}

@@ -11,4 +11,4 @@ export interface TopicDocument {
   updatedAt?: Date;
 }
 
-export const TOPIC_COLLECTION = "topics";
+export const TOPIC_COLLECTION = "grammar_topics";

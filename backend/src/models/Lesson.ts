@@ -11,4 +11,4 @@ export interface LessonDocument {
   updatedAt?: Date;
 }
 
-export const LESSON_COLLECTION = "lessons";
+export const LESSON_COLLECTION = "grammar_lessons";
