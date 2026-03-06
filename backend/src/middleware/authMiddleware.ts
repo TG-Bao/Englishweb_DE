@@ -12,28 +12,30 @@ type JwtPayload = {
   role: "USER" | "ADMIN";
 };
 
-export const authenticate = (req: AuthRequest, _res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+export class AuthMiddleware {
+  static authenticate = (req: AuthRequest, _res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
 
-  if (!authHeader?.startsWith("Bearer ")) {
-    return next(new AppError("Unauthorized", 401));
-  }
+    if (!authHeader?.startsWith("Bearer ")) {
+      return next(new AppError("Unauthorized", 401));
+    }
 
-  const token = authHeader.split(" ")[1];
+    const token = authHeader.split(" ")[1];
 
-  try {
-    const decoded = jwt.verify(token, env.jwtSecret) as JwtPayload;
-    req.user = { id: decoded.id, role: decoded.role };
+    try {
+      const decoded = jwt.verify(token, env.jwtSecret) as JwtPayload;
+      req.user = { id: decoded.id, role: decoded.role };
+      return next();
+    } catch {
+      return next(new AppError("Invalid token", 401));
+    }
+  };
+
+  static authorize = (roles: Array<"USER" | "ADMIN">) => (req: AuthRequest, _res: Response, next: NextFunction) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return next(new AppError("Forbidden", 403));
+    }
+
     return next();
-  } catch {
-    return next(new AppError("Invalid token", 401));
-  }
-};
-
-export const authorize = (roles: Array<"USER" | "ADMIN">) => (req: AuthRequest, _res: Response, next: NextFunction) => {
-  if (!req.user || !roles.includes(req.user.role)) {
-    return next(new AppError("Forbidden", 403));
-  }
-
-  return next();
-};
+  };
+}

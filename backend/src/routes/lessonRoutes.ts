@@ -13,7 +13,7 @@ import { QuestionRepository } from "../repositories/QuestionRepository";
 import { ProgressService } from "../services/ProgressService";
 import { ProgressRepository } from "../repositories/ProgressRepository";
 import { TopicRepository } from "../repositories/TopicRepository";
-import { authenticate, authorize } from "../middleware/authMiddleware";
+import { AuthMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -29,7 +29,6 @@ const questionService = new QuestionService(new QuestionRepository());
 const progressService = new ProgressService(
   new ProgressRepository(),
   lessonRepo,
-  new TopicRepository(),
   vocabRepo,
   grammarRepo,
   quizRepo
@@ -44,10 +43,14 @@ const lessonController = new LessonController(
   progressService
 );
 
-router.get("/topic/:topicId", authenticate, lessonController.listByTopic);
-router.get("/:id", authenticate, lessonController.getDetail);
-router.post("/", authenticate, authorize(["ADMIN"]), lessonController.create);
-router.patch("/:id", authenticate, authorize(["ADMIN"]), lessonController.update);
-router.delete("/:id", authenticate, authorize(["ADMIN"]), lessonController.remove);
+console.log("AuthMiddleware:", typeof AuthMiddleware !== "undefined" ? AuthMiddleware : "undefined");
+console.log("AuthMiddleware.authenticate:", AuthMiddleware?.authenticate);
+console.log("lessonController.listByTopic:", lessonController.listByTopic);
+
+router.get("/topic/:topicId", AuthMiddleware.authenticate, lessonController.listByTopic);
+router.get("/:id", AuthMiddleware.authenticate, lessonController.getDetail);
+router.post("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), lessonController.create);
+router.patch("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), lessonController.update);
+router.delete("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), lessonController.remove);
 
 export default router;

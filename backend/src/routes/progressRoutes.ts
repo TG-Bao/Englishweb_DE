@@ -6,7 +6,7 @@ import { LessonRepository } from "../repositories/LessonRepository";
 import { VocabularyRepository } from "../repositories/VocabularyRepository";
 import { GrammarRepository } from "../repositories/GrammarRepository";
 import { QuizRepository } from "../repositories/QuizRepository";
-import { authenticate } from "../middleware/authMiddleware";
+import { AuthMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -20,8 +20,8 @@ const progressService = new ProgressService(
 );
 const progressController = new ProgressController(progressService);
 
-router.get("/me", authenticate, progressController.getMyProgress);
-router.post("/vocabulary", authenticate, progressController.markVocabularyLearned);
-router.post("/grammar", authenticate, progressController.markGrammarLearned);
+router.get("/me", AuthMiddleware.authenticate, progressController.getMyProgress);
+router.post("/vocabulary", AuthMiddleware.authenticate, progressController.markVocabularyLearned);
+router.post("/grammar", AuthMiddleware.authenticate, progressController.markGrammarLearned);
 
 export default router;
