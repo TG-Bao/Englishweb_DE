@@ -2,11 +2,19 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { clearAuth, getUser } from "../utils/auth";
 import { Globe, LogOut, User as UserIcon, BookOpen, Mic, ChevronDown, Settings, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 
 const AppShell = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = getUser();
+  const [user, setUser] = useState(getUser());
+
+  useEffect(() => {
+    const handleUpdate = () => setUser(getUser());
+    window.addEventListener("user-updated", handleUpdate);
+    return () => window.removeEventListener("user-updated", handleUpdate);
+  }, []);
+
   const isAuthPage = ["/login", "/register"].includes(location.pathname);
 
   const logout = () => {
@@ -79,8 +87,16 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           <div className="flex items-center gap-4">
             {user ? (
               <div className="profile-menu-container">
-                <div className="avatar">
-                  {user.name?.charAt(0).toUpperCase() || "U"}
+                <div className="avatar" style={{ 
+                  background: user.avatarUrl ? `url(${user.avatarUrl}) center/cover no-repeat` : 'linear-gradient(135deg, var(--primary), #6366f1)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontWeight: 'bold'
+                }}>
+                  {!user.avatarUrl && (user.name?.charAt(0).toUpperCase() || "U")}
                 </div>
                 <div className="dropdown-menu profile-dropdown">
                   <div className="dropdown-header">
