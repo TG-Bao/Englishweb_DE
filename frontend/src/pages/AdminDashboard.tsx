@@ -5,18 +5,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Layout, BookOpen, Layers, HelpCircle, Plus, Edit2, Trash2,
   Save, Settings, Globe, LogOut, Moon, ChevronDown, ShieldCheck,
-  List
+  List, Users, Star
 } from "lucide-react";
 import { clearAuth, getUser } from "../utils/auth";
+import { userService, UserItem } from "../services/UserService";
+import { topicService } from "../services/TopicService";
+import { quizService } from "../services/QuizService";
+import { levelService, LevelItem } from "../services/LevelService";
 
-type Section = "topics" | "lessons" | "vocabulary" | "quizzes" | "questions";
+type Section = "levels" | "topics" | "lessons" | "vocabulary" | "quizzes" | "questions" | "users";
+
+// Đã import UserItem từ UserService.ts
 
 interface Topic { _id: string; title: string; order?: number; level?: string; }
 interface Lesson { _id: string; title: string; order?: number; }
 interface Quiz { _id: string; title: string; scopeType?: string; scopeId?: string; passScore?: number; }
 interface Question { _id: string; question: string; options?: string[]; correctAnswer?: string; }
-
-const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -27,6 +31,31 @@ const AdminDashboard = () => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [levelsData, setLevelsData] = useState<LevelItem[]>([]);
+
+  const [levelName, setLevelName] = useState("");
+  const [levelDesc, setLevelDesc] = useState("");
+  const [levelMinPoints, setLevelMinPoints] = useState(0);
+  const [levelOrder, setLevelOrder] = useState(1);
+  const [editLevelId, setEditLevelId] = useState("");
+  const [users, setUsers] = useState<UserItem[]>([]);
+  const [editUserId, setEditUserId] = useState("");
+  const [editUserName, setEditUserName] = useState("");
+  const [editUserEmail, setEditUserEmail] = useState("");
+  const [editUserRole, setEditUserRole] = useState<"USER" | "ADMIN">("USER");
+  const [editUserPhone, setEditUserPhone] = useState("");
+  const [editUserBio, setEditUserBio] = useState("");
+  const [editUserDob, setEditUserDob] = useState("");
+  const [editUserGender, setEditUserGender] = useState("");
+  const [editUserLevel, setEditUserLevel] = useState("");
+  const [editUserTargetLevel, setEditUserTargetLevel] = useState("");
+  const [editUserLearningGoal, setEditUserLearningGoal] = useState("");
+  const [editUserIsActive, setEditUserIsActive] = useState(true);
+  const [editUserAvatarUrl, setEditUserAvatarUrl] = useState("");
+  const [editUserAddress, setEditUserAddress] = useState("");
+  const [editUserPoints, setEditUserPoints] = useState(0);
+  const [editUserTotalLessons, setEditUserTotalLessons] = useState(0);
+  const [userMsg, setUserMsg] = useState("");
 
   const [topicTitle, setTopicTitle] = useState("");
   const [topicOrder, setTopicOrder] = useState(1);
@@ -58,13 +87,113 @@ const AdminDashboard = () => {
 
   const loadAdminData = async () => {
     try {
-      const [topicRes, quizRes] = await Promise.all([api.get("/topics/all"), api.get("/quiz/all")]);
-      setTopics(topicRes.data.data || []);
-      setQuizzes(quizRes.data.data || []);
-      if (topicRes.data.data?.length > 0 && !lessonTopicId) setLessonTopicId(topicRes.data.data[0]._id);
-      if (quizRes.data.data?.length > 0 && !questionQuizId) setQuestionQuizId(quizRes.data.data[0]._id);
+      const [topicsData, quizzesData, levelsRes] = await Promise.all([
+        topicService.getAll(),
+        quizService.getAll(),
+        levelService.getAll()
+      ]);
+      setTopics(topicsData);
+      setQuizzes(quizzesData);
+      setLevelsData(levelsRes);
+      if (topicsData.length > 0 && !lessonTopicId) setLessonTopicId(topicsData[0]._id);
+      if (quizzesData.length > 0 && !questionQuizId) setQuestionQuizId(quizzesData[0]._id);
     } catch (err) {
       console.error("Failed to load admin data", err);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to load users", err);
+    }
+  };
+
+  const startEditUser = (u: UserItem) => {
+    setEditUserId(u._id);
+    setEditUserName(u.name);
+    setEditUserEmail(u.email);
+    setEditUserRole(u.role);
+    setEditUserPhone(u.phone || "");
+    setEditUserBio(u.bio || "");
+    setEditUserDob(u.dateOfBirth ? u.dateOfBirth.substring(0, 10) : "");
+    setEditUserGender(u.gender || "");
+    setEditUserLevel(u.level || "");
+    setEditUserTargetLevel(u.targetLevel || "");
+    setEditUserLearningGoal(u.learningGoal || "");
+    setEditUserIsActive(u.isActive !== false);
+    setEditUserAvatarUrl(u.avatarUrl || "");
+    setEditUserAddress(u.address || "");
+    setEditUserPoints(u.points || 0);
+    setEditUserTotalLessons(u.totalLessons || 0);
+    setUserMsg("");
+  };
+
+  const cancelEditUser = () => {
+    setEditUserId("");
+    setEditUserName("");
+    setEditUserEmail("");
+    setEditUserRole("USER");
+    setEditUserPhone("");
+    setEditUserBio("");
+    setEditUserDob("");
+    setEditUserGender("");
+    setEditUserLevel("");
+    setEditUserTargetLevel("");
+    setEditUserLearningGoal("");
+    setEditUserIsActive(true);
+    setEditUserAvatarUrl("");
+    setEditUserAddress("");
+    setEditUserPoints(0);
+    setEditUserTotalLessons(0);
+    setUserMsg("");
+  };
+
+  const handleUpdateUser = async () => {
+    try {
+      await userService.update(editUserId, {
+        name: editUserName,
+        email: editUserEmail,
+        role: editUserRole,
+        phone: editUserPhone || undefined,
+        bio: editUserBio || undefined,
+        dateOfBirth: editUserDob || undefined,
+        gender: editUserGender as any,
+        level: editUserLevel || undefined,
+        targetLevel: editUserTargetLevel || undefined,
+        learningGoal: editUserLearningGoal || undefined,
+        isActive: editUserIsActive,
+        avatarUrl: editUserAvatarUrl || undefined,
+        address: editUserAddress || undefined,
+        points: Number(editUserPoints),
+        totalLessons: Number(editUserTotalLessons),
+      });
+      setUserMsg("✅ Cập nhật thành công!");
+      cancelEditUser();
+      loadUsers();
+    } catch (err: any) {
+      setUserMsg("❌ " + (err?.response?.data?.message || "Lỗi cập nhật"));
+    }
+  };
+
+  const handleToggleActive = async (u: UserItem) => {
+    try {
+      await userService.update(u._id, { isActive: !u.isActive });
+      loadUsers();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Lỗi thay đổi trạng thái");
+    }
+  };
+
+  const handleDeleteUser = async (id: string) => {
+    if (!confirm("Xác nhận xóa người dùng này?")) return;
+    try {
+      await userService.delete(id);
+      loadUsers();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Lỗi xóa người dùng");
     }
   };
 
@@ -83,6 +212,7 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => { loadAdminData(); }, []);
+  useEffect(() => { if (activeTab === "users") loadUsers(); }, [activeTab]);
   useEffect(() => { if (lessonTopicId) loadLessons(lessonTopicId); }, [lessonTopicId]);
   useEffect(() => { if (questionQuizId) loadQuestions(questionQuizId); }, [questionQuizId]);
 
@@ -90,6 +220,16 @@ const AdminDashboard = () => {
     const t = topics.find(t => t._id === editTopicId);
     if (t) { setTopicTitle(t.title); setTopicOrder(t.order || 1); setTopicLevel(t.level || "A2"); }
   }, [editTopicId, topics]);
+
+  useEffect(() => {
+    const lvl = levelsData.find(l => l._id === editLevelId);
+    if (lvl) {
+      setLevelName(lvl.name);
+      setLevelDesc(lvl.description || "");
+      setLevelMinPoints(lvl.minPoints || 0);
+      setLevelOrder(lvl.order || 1);
+    }
+  }, [editLevelId, levelsData]);
 
   useEffect(() => {
     const l = lessons.find(l => l._id === editLessonId);
@@ -123,11 +263,13 @@ const AdminDashboard = () => {
   };
 
   const navItems = [
-    { id: "topics",    label: "Chủ Đề",     icon: <Layout size={24} /> },
-    { id: "lessons",   label: "Bài Học",     icon: <BookOpen size={24} /> },
-    { id: "vocabulary",label: "Từ Vựng",     icon: <Layers size={24} /> },
-    { id: "quizzes",   label: "Bài Kiểm Tra",icon: <List size={24} /> },
-    { id: "questions", label: "Câu Hỏi",     icon: <HelpCircle size={24} /> },
+    { id: "levels", label: "Cấp Độ", icon: <Star size={24} /> },
+    { id: "topics", label: "Chủ Đề", icon: <Layout size={24} /> },
+    { id: "lessons", label: "Bài Học", icon: <BookOpen size={24} /> },
+    { id: "vocabulary", label: "Từ Vựng", icon: <Layers size={24} /> },
+    { id: "quizzes", label: "Bài Kiểm Tra", icon: <List size={24} /> },
+    { id: "questions", label: "Câu Hỏi", icon: <HelpCircle size={24} /> },
+    { id: "users", label: "Người Dùng", icon: <Users size={24} /> },
   ];
 
   const logout = () => { clearAuth(); navigate("/login"); };
@@ -239,6 +381,75 @@ const AdminDashboard = () => {
         </header>
 
         <AnimatePresence mode="wait">
+          {/* ───── LEVELS ───── */}
+          {activeTab === "levels" && (
+            <motion.div key="levels" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "24px" }}>Quản Lý Cấp Độ</h2>
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={labelStyle}>Tên cấp độ (VD: A1, Beginner)</label>
+                  <input style={inputStyle} value={levelName} onChange={e => setLevelName(e.target.value)} />
+                </div>
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={labelStyle}>Mô tả</label>
+                  <input style={inputStyle} value={levelDesc} onChange={e => setLevelDesc(e.target.value)} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+                  <div>
+                    <label style={labelStyle}>Điểm tối thiểu (Min Points)</label>
+                    <input style={inputStyle} type="number" value={levelMinPoints} onChange={e => setLevelMinPoints(Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Thứ tự (Order)</label>
+                    <input style={inputStyle} type="number" value={levelOrder} onChange={e => setLevelOrder(Number(e.target.value))} />
+                  </div>
+                </div>
+                {!editLevelId ? (
+                  <button
+                    onClick={() => handleAction("POST", "/levels", { name: levelName, description: levelDesc, minPoints: levelMinPoints, order: levelOrder })}
+                    style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
+                  >
+                    <Plus size={18} /> Thêm cấp độ
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <button
+                      onClick={() => handleAction("PATCH", `/levels/${editLevelId}`, { name: levelName, description: levelDesc, minPoints: levelMinPoints, order: levelOrder })}
+                      style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
+                    >
+                      <Save size={18} /> Lưu thay đổi
+                    </button>
+                    <button onClick={() => { setEditLevelId(""); setLevelName(""); setLevelDesc(""); }} style={{ padding: "14px 20px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "12px", fontWeight: 600, cursor: "pointer" }}>Hủy</button>
+                  </div>
+                )}
+              </div>
+
+              {/* List */}
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ fontWeight: 800, fontSize: "17px" }}>Các cấp độ hiện có</h3>
+                  <span style={{ background: "#eef2ff", color: "var(--primary)", fontWeight: 700, fontSize: "12px", padding: "4px 12px", borderRadius: "99px" }}>{levelsData.length} CẤP ĐỘ</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {levelsData.map((lvl) => (
+                    <div key={lvl._id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px 20px", borderRadius: "14px", border: "1.5px solid #f1f5f9", background: "#fafafa" }}>
+                      <span style={{ width: "28px", height: "28px", background: "#eef2ff", color: "var(--primary)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "13px" }}>{lvl.order}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: "16px" }}>{lvl.name}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Min pts: {lvl.minPoints || 0} - {lvl.description}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button onClick={() => setEditLevelId(lvl._id)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b" }}><Edit2 size={15} /></button>
+                        <button onClick={() => handleAction("DELETE", `/levels/${lvl._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
+                      </div>
+                    </div>
+                  ))}
+                  {levelsData.length === 0 && <p style={{ textAlign: "center", color: "#94a3b8", padding: "32px" }}>Chưa có cấp độ nào.</p>}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* ───── TOPICS ───── */}
           {activeTab === "topics" && (
             <motion.div key="topics" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -254,9 +465,9 @@ const AdminDashboard = () => {
                     <input style={inputStyle} type="number" value={topicOrder} onChange={e => setTopicOrder(Number(e.target.value))} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Cấp độ (A1-C2)</label>
+                    <label style={labelStyle}>Cấp độ</label>
                     <select style={inputStyle} value={topicLevel} onChange={e => setTopicLevel(e.target.value)}>
-                      {LEVELS.map(l => <option key={l}>{l}</option>)}
+                      {levelsData.map(l => <option key={l._id} value={l.name}>{l.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -542,6 +753,301 @@ const AdminDashboard = () => {
               </div>
             </motion.div>
           )}
+
+          {/* ───── USERS ───── */}
+          {activeTab === "users" && (
+            <motion.div key="users" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+
+              {/* ── Edit form đầy đủ ── */}
+              {editUserId && (
+                <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                  <h2 style={{ fontSize: "20px", fontWeight: 800, marginBottom: "24px", color: "#1e293b" }}>✏️ Chỉnh sửa hồ sơ người dùng</h2>
+
+                  {/* Nhóm 1: Cơ bản */}
+                  <div style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #f1f5f9" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--primary)", letterSpacing: "0.5px", marginBottom: "14px" }}>THÔNG TIN CƠ BẢN</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+                      <div>
+                        <label style={labelStyle}>Họ tên</label>
+                        <input style={inputStyle} value={editUserName} onChange={e => setEditUserName(e.target.value)} placeholder="Tên người dùng" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Email</label>
+                        <input style={inputStyle} type="email" value={editUserEmail} onChange={e => setEditUserEmail(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Vai trò</label>
+                        <select style={inputStyle} value={editUserRole} onChange={e => setEditUserRole(e.target.value as "USER" | "ADMIN")}>
+                          <option value="USER">USER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ marginTop: "16px" }}>
+                      <label style={labelStyle}>URL ảnh đại diện</label>
+                      <input style={inputStyle} value={editUserAvatarUrl} onChange={e => setEditUserAvatarUrl(e.target.value)} placeholder="https://example.com/avatar.jpg" />
+                    </div>
+                  </div>
+
+                  {/* Nhóm 2: Hồ sơ */}
+                  <div style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #f1f5f9" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#10b981", letterSpacing: "0.5px", marginBottom: "14px" }}>HỒ SƠ CÁ NHÂN</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                      <div>
+                        <label style={labelStyle}>Số điện thoại</label>
+                        <input style={inputStyle} value={editUserPhone} onChange={e => setEditUserPhone(e.target.value)} placeholder="0901234567" />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Ngày sinh</label>
+                        <input style={inputStyle} type="date" value={editUserDob} onChange={e => setEditUserDob(e.target.value)} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Giới tính</label>
+                        <select style={inputStyle} value={editUserGender} onChange={e => setEditUserGender(e.target.value)}>
+                          <option value="">-- Chọn --</option>
+                          <option value="MALE">Nam</option>
+                          <option value="FEMALE">Nữ</option>
+                          <option value="OTHER">Khác</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: "16px" }}>
+                      <label style={labelStyle}>Địa chỉ</label>
+                      <input style={inputStyle} value={editUserAddress} onChange={e => setEditUserAddress(e.target.value)} placeholder="VD: 123 Đường ABC, Quận 1, TP.HCM" />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Giới thiệu bản thân (Bio)</label>
+                      <textarea style={{ ...inputStyle, resize: "none" }} rows={2} value={editUserBio} onChange={e => setEditUserBio(e.target.value)} placeholder="Viết vài dòng về bản thân..." />
+                    </div>
+                  </div>
+
+                  {/* Nhóm 3: Học tập */}
+                  <div style={{ marginBottom: "20px", paddingBottom: "20px", borderBottom: "1px solid #f1f5f9" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#f59e0b", letterSpacing: "0.5px", marginBottom: "14px" }}>THÔNG TIN HỌC TẬP</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+                      <div>
+                        <label style={labelStyle}>Cấp độ hiện tại</label>
+                        <select style={inputStyle} value={editUserLevel} onChange={e => setEditUserLevel(e.target.value)}>
+                          <option value="">-- Chọn --</option>
+                          {levelsData.map(l => <option key={l._id} value={l.name}>{l.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Cấp độ mục tiêu</label>
+                        <select style={inputStyle} value={editUserTargetLevel} onChange={e => setEditUserTargetLevel(e.target.value)}>
+                          <option value="">-- Chọn --</option>
+                          {levelsData.map(l => <option key={l._id} value={l.name}>{l.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Mục tiêu học tập</label>
+                        <input style={inputStyle} value={editUserLearningGoal} onChange={e => setEditUserLearningGoal(e.target.value)} placeholder="VD: Du lịch, Công việc..." />
+                      </div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginTop: "16px" }}>
+                      <div>
+                        <label style={labelStyle}>Điểm tích lũy (Points)</label>
+                        <input style={inputStyle} type="number" value={editUserPoints} onChange={e => setEditUserPoints(Number(e.target.value))} />
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Số bài học đã xong</label>
+                        <input style={inputStyle} type="number" value={editUserTotalLessons} onChange={e => setEditUserTotalLessons(Number(e.target.value))} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Nhóm 4: Trạng thái */}
+                  <div style={{ marginBottom: "24px" }}>
+                    <div style={{ fontSize: "12px", fontWeight: 700, color: "#6366f1", letterSpacing: "0.5px", marginBottom: "14px" }}>TRẠNG THÁI TÀI KHOẢN</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <button
+                        onClick={() => setEditUserIsActive(!editUserIsActive)}
+                        style={{
+                          width: "52px", height: "28px", borderRadius: "14px", border: "none", cursor: "pointer",
+                          background: editUserIsActive ? "#22c55e" : "#e2e8f0", position: "relative", transition: "background 0.2s"
+                        }}
+                      >
+                        <span style={{
+                          position: "absolute", top: "3px", left: editUserIsActive ? "26px" : "3px",
+                          width: "22px", height: "22px", borderRadius: "50%", background: "white",
+                          transition: "left 0.2s", boxShadow: "0 1px 4px rgba(0,0,0,0.15)"
+                        }} />
+                      </button>
+                      <span style={{ fontWeight: 600, color: editUserIsActive ? "#16a34a" : "#ef4444", fontSize: "14px" }}>
+                        {editUserIsActive ? "✅ Tài khoản đang hoạt động" : "🔒 Tài khoản bị khoá"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {userMsg && (
+                    <div style={{
+                      marginBottom: "16px", padding: "12px 16px", borderRadius: "10px", fontSize: "14px", fontWeight: 600,
+                      background: userMsg.startsWith("✅") ? "#f0fdf4" : "#fef2f2",
+                      color: userMsg.startsWith("✅") ? "#16a34a" : "#ef4444"
+                    }}>
+                      {userMsg}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <button onClick={handleUpdateUser}
+                      style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>
+                      <Save size={18} /> Lưu thay đổi
+                    </button>
+                    <button onClick={cancelEditUser}
+                      style={{ padding: "14px 20px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "12px", fontWeight: 600, cursor: "pointer" }}>
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Users table ── */}
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+                  <h2 style={{ fontSize: "22px", fontWeight: 800, margin: 0 }}>Danh Sách Người Dùng</h2>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <span style={{ background: "#eef2ff", color: "var(--primary)", fontWeight: 700, fontSize: "12px", padding: "4px 12px", borderRadius: "99px" }}>
+                      {users.length} NGƯỜI DÙNG
+                    </span>
+                    <button onClick={loadUsers}
+                      style={{ padding: "8px 16px", background: "#f1f5f9", border: "none", borderRadius: "10px", fontSize: "13px", fontWeight: 600, cursor: "pointer", color: "#64748b" }}>
+                      🔄 Làm mới
+                    </button>
+                  </div>
+                </div>
+
+                {/* Header */}
+                <div style={{
+                  display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1.5fr 1fr 1.2fr auto", gap: "12px",
+                  padding: "10px 16px", background: "#f8fafc", borderRadius: "10px", marginBottom: "8px",
+                  fontSize: "11px", fontWeight: 700, color: "#94a3b8", letterSpacing: "0.5px"
+                }}>
+                  <span>TÊN / EMAIL</span>
+                  <span>VAI TRÒ / LEVEL</span>
+                  <span>GIỚI TÍNH</span>
+                  <span>NGÀY SINH / BIO</span>
+                  <span>TRẠNG THÁI</span>
+                  <span>ĐĂNG NHẬP / NGÀY TẠO</span>
+                  <span>THAO TÁC</span>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {users.map(u => (
+                    <div key={u._id}
+                      style={{
+                        display: "grid", gridTemplateColumns: "2fr 2fr 1fr 1.5fr 1fr 1.2fr auto", gap: "12px",
+                        alignItems: "center", padding: "14px 16px", borderRadius: "14px",
+                        border: `1.5px solid ${u.isActive === false ? "#fecaca" : "#f1f5f9"}`,
+                        background: u.isActive === false ? "#fff5f5" : "#fafafa",
+                        transition: "all 0.15s",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.borderColor = "#e0e7ff")}
+                      onMouseLeave={e => (e.currentTarget.style.borderColor = u.isActive === false ? "#fecaca" : "#f1f5f9")}
+                    >
+                      {/* Tên + email + phone */}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, fontSize: "14px", display: "flex", alignItems: "center", gap: "6px" }}>
+                          {u.avatarUrl
+                            ? <img src={u.avatarUrl} style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                            : <span style={{ width: 28, height: 28, borderRadius: "50%", background: "linear-gradient(135deg,var(--primary),#6366f1)", color: "white", fontSize: "11px", fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{u.name.charAt(0).toUpperCase()}</span>
+                          }
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.name}</div>
+                            <div style={{ fontSize: "12px", color: "#94a3b8", fontWeight: 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{u.email}</div>
+                            {u.phone && <div style={{ fontSize: "11px", color: "#cbd5e1", fontWeight: 400 }}>📞 {u.phone}</div>}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Role + Level + Mục tiêu */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <span style={{
+                          padding: "3px 10px", borderRadius: "99px", fontSize: "11px", fontWeight: 700, width: "fit-content",
+                          background: u.role === "ADMIN" ? "#fef3c7" : "#ede9fe",
+                          color: u.role === "ADMIN" ? "#d97706" : "#7c3aed"
+                        }}>{u.role}</span>
+                        {u.level ? (
+                          <span style={{ padding: "2px 8px", borderRadius: "99px", fontSize: "11px", fontWeight: 700, width: "fit-content", background: "#dbeafe", color: "#1d4ed8" }}>
+                            📚 {u.level}{u.targetLevel ? ` → ${u.targetLevel}` : ""}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: "11px", color: "#cbd5e1" }}>Chưa xác định level</span>
+                        )}
+                        {u.learningGoal && <div style={{ fontSize: "11px", color: "#94a3b8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>🎯 {u.learningGoal}</div>}
+                      </div>
+
+                      {/* Giới tính */}
+                      <div style={{ fontSize: "13px", color: "#64748b" }}>
+                        {u.gender === "MALE" ? "👨 Nam" : u.gender === "FEMALE" ? "👩 Nữ" : u.gender === "OTHER" ? "🧑 Khác" : <span style={{ color: "#cbd5e1" }}>—</span>}
+                      </div>
+
+                      {/* Ngày sinh + Bio */}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>
+                          {u.dateOfBirth
+                            ? `🎂 ${new Date(u.dateOfBirth).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}`
+                            : <span style={{ color: "#e2e8f0" }}>Chưa có ngày sinh</span>}
+                        </div>
+                        {u.bio && (
+                          <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "3px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={u.bio}>
+                            💬 {u.bio}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Trạng thái toggle nhanh */}
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <button title={u.isActive !== false ? "Khoá tài khoản" : "Mở khoá tài khoản"} onClick={() => handleToggleActive(u)}
+                          style={{
+                            width: "40px", height: "22px", borderRadius: "11px", border: "none", cursor: "pointer",
+                            background: u.isActive !== false ? "#22c55e" : "#e2e8f0", position: "relative", transition: "background 0.2s"
+                          }}>
+                          <span style={{
+                            position: "absolute", top: "2px", left: u.isActive !== false ? "20px" : "2px",
+                            width: "18px", height: "18px", borderRadius: "50%", background: "white",
+                            transition: "left 0.2s", boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                          }} />
+                        </button>
+                        <span style={{ fontSize: "11px", fontWeight: 600, color: u.isActive !== false ? "#16a34a" : "#ef4444" }}>
+                          {u.isActive !== false ? "Hoạt động" : "🔒 Khoá"}
+                        </span>
+                      </div>
+
+                      {/* Đăng nhập cuối + Ngày tạo */}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600 }}>
+                          {u.lastLoginAt
+                            ? new Date(u.lastLoginAt).toLocaleString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                            : <span style={{ color: "#cbd5e1" }}>Chưa đăng nhập</span>}
+                        </div>
+                        {u.createdAt && (
+                          <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+                            📅 Tạo: {new Date(u.createdAt).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Thao tác */}
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button onClick={() => startEditUser(u)} title="Chỉnh sửa"
+                          style={{ padding: "7px", borderRadius: "10px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b" }}>
+                          <Edit2 size={14} />
+                        </button>
+                        <button onClick={() => handleDeleteUser(u._id)} title="Xóa"
+                          style={{ padding: "7px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {users.length === 0 && (
+                    <p style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>Chưa có người dùng nào.</p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
         </AnimatePresence>
       </main>
     </div>
