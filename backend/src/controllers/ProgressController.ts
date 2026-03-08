@@ -15,10 +15,10 @@ export class ProgressController {
     }
 
     const progress = await this.progressService.getByUser(req.user.id);
-    return sendSuccess(
+    sendSuccess(
       res,
       progress || {
-        lessonProgress: [],
+        levelProgress: [],
         topicProgress: [],
         quizResults: []
       }
@@ -30,9 +30,9 @@ export class ProgressController {
       throw new AppError("Unauthorized", 401);
     }
 
-    const { lessonId, vocabId } = validateMarkVocabulary(req.body);
-    const progress = await this.progressService.markVocabularyLearned(req.user.id, lessonId, vocabId);
-    return sendSuccess(res, progress);
+    const { topicId, vocabId } = validateMarkVocabulary(req.body);
+    const progress = await this.progressService.markVocabularyLearned(req.user.id, topicId, vocabId);
+    sendSuccess(res, progress);
   });
 
   markGrammarLearned = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -40,8 +40,8 @@ export class ProgressController {
       throw new AppError("Unauthorized", 401);
     }
 
-    const { lessonId, grammarId } = validateMarkGrammar(req.body);
-    const progress = await this.progressService.markGrammarLearned(req.user.id, lessonId, grammarId);
-    return sendSuccess(res, progress);
+    const { level, grammarId } = validateMarkGrammar(req.body);
+    const progress = await this.progressService.markGrammarLearned(req.user.id, level, grammarId);
+    sendSuccess(res, progress);
   });
 }

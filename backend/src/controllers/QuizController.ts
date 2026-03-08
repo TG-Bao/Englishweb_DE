@@ -18,12 +18,12 @@ export class QuizController {
 
   list = asyncHandler(async (_req: AuthRequest, res: Response) => {
     const items = await this.quizService.listPublished();
-    return sendSuccess(res, items);
+    sendSuccess(res, items);
   });
 
   listAll = asyncHandler(async (_req: AuthRequest, res: Response) => {
     const items = await this.quizService.listAll();
-    return sendSuccess(res, items);
+    sendSuccess(res, items);
   });
 
   create = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -36,7 +36,7 @@ export class QuizController {
       passScore: dto.passScore,
       isPublished: dto.isPublished
     });
-    return sendSuccess(res, created, 201);
+    sendSuccess(res, created, 201);
   });
 
   submit = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -67,12 +67,12 @@ export class QuizController {
         passed
       );
 
-      if (quiz.scopeType === "LESSON" && quiz.scopeId) {
-        await this.progressService.recordLessonQuizScore(req.user.id, quiz.scopeId.toString(), percentage, passed);
+      if (quiz.scopeType === "TOPIC" && quiz.scopeId) {
+        await this.progressService.recordTopicQuizScore(req.user.id, quiz.scopeId.toString(), percentage, passed);
       }
     }
 
-    return sendSuccess(res, { ...result, percentage, passed, passScore: quiz.passScore });
+    sendSuccess(res, { ...result, percentage, passed, passScore: quiz.passScore });
   });
 
   getDetail = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -82,25 +82,26 @@ export class QuizController {
     }
 
     const questions = await this.questionService.listByQuiz(quiz._id!.toString());
-    return sendSuccess(res, { quiz, questions });
+    sendSuccess(res, { quiz, questions });
   });
 
   update = asyncHandler(async (req: AuthRequest, res: Response) => {
     const dto = validateUpdateQuiz(req.body);
-    const data = {
-      ...dto,
-      ...(dto.scopeId ? { scopeId: new ObjectId(dto.scopeId) } : {})
+    const { scopeId, ...rest } = dto;
+    const data: any = {
+      ...rest,
+      ...(scopeId ? { scopeId: new ObjectId(scopeId) } : {})
     };
 
     const updated = await this.quizService.update(req.params.id, data);
     if (!updated) {
       throw new AppError("Quiz not found", 404);
     }
-    return sendSuccess(res, updated);
+    sendSuccess(res, updated);
   });
 
   remove = asyncHandler(async (req: AuthRequest, res: Response) => {
     await this.quizService.remove(req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 200, "Deleted");
+    sendSuccess(res, { id: req.params.id }, 200, "Deleted");
   });
 }

@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError";
 
 export const validateCreateQuiz = (payload: any): CreateQuizDto => {
   return {
-    scopeType: requireString(payload?.scopeType, "scopeType"),
+    scopeType: payload?.scopeType as any,
     scopeId: optionalString(payload?.scopeId),
     title: requireString(payload?.title, "title"),
     passScore: optionalNumber(payload?.passScore) ?? 70,
@@ -14,7 +14,7 @@ export const validateCreateQuiz = (payload: any): CreateQuizDto => {
 
 export const validateUpdateQuiz = (payload: any): UpdateQuizDto => {
   const dto: UpdateQuizDto = {};
-  if (payload?.scopeType !== undefined) dto.scopeType = requireString(payload.scopeType, "scopeType");
+  if (payload?.scopeType !== undefined) dto.scopeType = payload.scopeType as any;
   if (payload?.scopeId !== undefined) dto.scopeId = optionalString(payload.scopeId);
   if (payload?.title !== undefined) dto.title = requireString(payload.title, "title");
   if (payload?.passScore !== undefined) dto.passScore = optionalNumber(payload.passScore);

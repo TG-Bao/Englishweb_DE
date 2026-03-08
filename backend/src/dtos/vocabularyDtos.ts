@@ -1,5 +1,5 @@
 export type CreateVocabularyDto = {
-  lessonId: string;
+  topicId: string;
   word: string;
   meaning: string;
   example: string;
@@ -10,7 +10,7 @@ export type CreateVocabularyDto = {
 };
 
 export type UpdateVocabularyDto = {
-  lessonId?: string;
+  topicId?: string;
   word?: string;
   meaning?: string;
   example?: string;

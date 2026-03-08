@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes";
 import topicRoutes from "./routes/topicRoutes";
-import lessonRoutes from "./routes/lessonRoutes";
 import vocabularyRoutes from "./routes/vocabularyRoutes";
 import grammarRoutes from "./routes/grammarRoutes";
 import quizRoutes from "./routes/quizRoutes";
@@ -22,8 +21,7 @@ export const createApp = () => {
   app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
   app.use("/api/auth", authRoutes);
-  app.use("/api/topics", topicRoutes);
-  app.use("/api/lessons", lessonRoutes);
+  // app.use("/api/topics", topicRoutes);
   app.use("/api/vocabulary", vocabularyRoutes);
   app.use("/api/grammar", grammarRoutes);
   app.use("/api/quiz", quizRoutes);
@@ -32,7 +30,11 @@ export const createApp = () => {
   app.use("/api/users", userRoutes);
   app.use("/api/levels", levelRoutes);
 
+  app.use("/api/grammar-topics", topicRoutes); 
   app.use(errorHandler);
 
   return app;
 };
+// backend/src/app.ts
+
+// Đăng ký đúng prefix để ra được URL như yêu cầu

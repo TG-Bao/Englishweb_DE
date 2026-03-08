@@ -5,8 +5,9 @@ import { IGrammarService } from "../interfaces/services/GrammarService";
 export class GrammarService implements IGrammarService {
   constructor(private grammarRepo: IGrammarRepository) {}
 
-  listByLesson(lessonId: string) {
-    return this.grammarRepo.listByLesson(lessonId);
+
+  listByLevel(level: string) {
+    return this.grammarRepo.listByLevel(level);
   }
 
   create(data: Omit<GrammarDocument, "_id">) {

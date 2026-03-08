@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 
-export type LessonStatus = "LOCKED" | "IN_PROGRESS" | "COMPLETED";
+export type ProgressStatus = "LOCKED" | "IN_PROGRESS" | "COMPLETED";
 
 export interface QuizResult {
   quizId: ObjectId;
@@ -11,29 +11,27 @@ export interface QuizResult {
   takenAt: Date;
 }
 
-export interface LessonProgress {
-  lessonId: ObjectId;
-  status: LessonStatus;
+export interface TopicProgress {
+  topicId: ObjectId;
+  status: ProgressStatus;
   vocabLearned: ObjectId[];
-  grammarLearned: ObjectId[];
   bestScore: number;
   quizPassed: boolean;
   completedAt?: Date;
 }
 
-export interface TopicProgress {
-  topicId: ObjectId;
-  completedLessons: number;
-  totalLessons: number;
-  status: LessonStatus;
+export interface LevelProgress {
+  level: string;
+  grammarLearned: ObjectId[];
+  status: ProgressStatus;
   completedAt?: Date;
 }
 
 export interface ProgressDocument {
   _id?: ObjectId;
   userId: ObjectId;
-  lessonProgress: LessonProgress[];
   topicProgress: TopicProgress[];
+  levelProgress: LevelProgress[];
   quizResults: QuizResult[];
   createdAt?: Date;
   updatedAt?: Date;

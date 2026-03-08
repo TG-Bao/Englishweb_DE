@@ -5,8 +5,8 @@ import { IVocabularyService } from "../interfaces/services/VocabularyService";
 export class VocabularyService implements IVocabularyService {
   constructor(private vocabRepo: IVocabularyRepository) {}
 
-  listByLesson(lessonId: string) {
-    return this.vocabRepo.listByLesson(lessonId);
+  listByTopicId(topicId: string) {
+    return this.vocabRepo.listByTopicId(topicId);
   }
 
   listByTopic(topic?: string) {

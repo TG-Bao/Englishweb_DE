@@ -1,9 +1,9 @@
 export type MarkVocabularyDto = {
-  lessonId: string;
+  topicId: string;
   vocabId: string;
 };
 
 export type MarkGrammarDto = {
-  lessonId: string;
+  level: string;
   grammarId: string;
 };
