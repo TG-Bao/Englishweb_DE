@@ -3,7 +3,7 @@ import { optionalString, requireString } from "./common";
 
 export const validateCreateVocabulary = (payload: any): CreateVocabularyDto => {
   return {
-    lessonId: requireString(payload?.lessonId, "lessonId"),
+    topicId: requireString(payload?.topicId, "topicId"),
     word: requireString(payload?.word, "word"),
     meaning: requireString(payload?.meaning, "meaning"),
     example: requireString(payload?.example, "example"),
@@ -16,7 +16,7 @@ export const validateCreateVocabulary = (payload: any): CreateVocabularyDto => {
 
 export const validateUpdateVocabulary = (payload: any): UpdateVocabularyDto => {
   const dto: UpdateVocabularyDto = {};
-  if (payload?.lessonId !== undefined) dto.lessonId = requireString(payload.lessonId, "lessonId");
+  if (payload?.topicId !== undefined) dto.topicId = requireString(payload.topicId, "topicId");
   if (payload?.word !== undefined) dto.word = requireString(payload.word, "word");
   if (payload?.meaning !== undefined) dto.meaning = requireString(payload.meaning, "meaning");
   if (payload?.example !== undefined) dto.example = requireString(payload.example, "example");

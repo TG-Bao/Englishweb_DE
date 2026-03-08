@@ -18,7 +18,7 @@ export interface UserItem {
     createdAt?: string;
     address?: string;
     points?: number;
-    totalLessons?: number;
+    totalTopicsLearned?: number;
 }
 
 class UserService {

@@ -56,7 +56,7 @@ export class UserController {
             // Trạng thái
             isActive,
             // Thêm mới
-            address, points, totalLessons
+            address, points, totalTopicsLearned
         } = req.body;
 
         // Validate role
@@ -93,7 +93,7 @@ export class UserController {
         if (isActive !== undefined) updateData.isActive = Boolean(isActive);
         if (address !== undefined) updateData.address = address;
         if (points !== undefined) updateData.points = Number(points);
-        if (totalLessons !== undefined) updateData.totalLessons = Number(totalLessons);
+        if (totalTopicsLearned !== undefined) updateData.totalTopicsLearned = Number(totalTopicsLearned);
 
         const updated = await this.userService.updateUser(req.params.id, updateData);
         sendSuccess(res, updated, 200, "Cập nhật người dùng thành công");

@@ -12,11 +12,11 @@ export class VocabularyController {
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const topic = req.query.topic?.toString();
-    const lessonId = req.query.lessonId?.toString();
+    const topicId = req.query.topicId?.toString();
     const level = req.query.level?.toString();
     const search = req.query.search?.toString();
 
-    const filters = { lessonId, topic, level, search };
+    const filters = { topicId, topic, level, search };
     const items = await this.vocabService.list(filters);
 
     const formattedItems = items.map(item => ({
@@ -27,7 +27,8 @@ export class VocabularyController {
       audioUrl: item.audioUrl,
       example: item.example,
       topic: item.topic,
-      level: item.level
+      level: item.level,
+      topicId: item.topicId
     }));
 
     return sendSuccess(res, formattedItems);
@@ -37,7 +38,7 @@ export class VocabularyController {
     const dto = validateCreateVocabulary(req.body);
 
     const created = await this.vocabService.create({
-      lessonId: new ObjectId(dto.lessonId),
+      topicId: new ObjectId(dto.topicId),
       word: dto.word,
       meaning: dto.meaning,
       example: dto.example,
@@ -46,25 +47,26 @@ export class VocabularyController {
       phonetic: dto.phonetic,
       audioUrl: dto.audioUrl
     });
-    return sendSuccess(res, created, 201);
+    sendSuccess(res, created, 201);
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
-    const { lessonId, ...dto } = validateUpdateVocabulary(req.body);
-    const data: Partial<VocabularyDocument> = {
-      ...dto,
-      ...(lessonId ? { lessonId: new ObjectId(lessonId) } : {})
+    const dto = validateUpdateVocabulary(req.body);
+    const { topicId, ...updateFields } = dto;
+    const data: any = {
+      ...updateFields,
+      ...(topicId ? { topicId: new ObjectId(topicId) } : {})
     };
 
-    const updated = await this.vocabService.update(req.params.id, data);
+    const updated = await this.vocabService.update(req.params.id, data as any);
     if (!updated) {
       throw new AppError("Vocabulary not found", 404);
     }
-    return sendSuccess(res, updated);
+    sendSuccess(res, updated);
   });
 
   remove = asyncHandler(async (req: Request, res: Response) => {
     await this.vocabService.remove(req.params.id);
-    return sendSuccess(res, { id: req.params.id }, 200, "Deleted");
+    sendSuccess(res, { id: req.params.id }, 200, "Deleted");
   });
 }

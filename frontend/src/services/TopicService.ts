@@ -9,22 +9,22 @@ export interface TopicItem {
 
 class TopicService {
     async getAll() {
-        const res = await api.get("/topics/all");
+        const res = await api.get("/grammar-topics/all");
         return res.data.data as TopicItem[];
     }
 
     async create(data: any) {
-        const res = await api.post("/topics", data);
+        const res = await api.post("/grammar-topics", data);
         return res.data;
     }
 
     async update(id: string, data: any) {
-        const res = await api.patch(`/topics/${id}`, data);
+        const res = await api.patch(`/grammar-topics/${id}`, data);
         return res.data;
     }
 
     async delete(id: string) {
-        const res = await api.delete(`/topics/${id}`);
+        const res = await api.delete(`/grammar-topics/${id}`);
         return res.data;
     }
 }

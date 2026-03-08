@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 export interface VocabularyDocument {
   _id?: ObjectId;
-  lessonId: ObjectId;
+  topicId: ObjectId;
   word: string;
   meaning: string;
   phonetic?: string;

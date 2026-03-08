@@ -24,7 +24,7 @@ export class AuthController {
           targetLevel: result.user.targetLevel,
           learningGoal: result.user.learningGoal,
           points: result.user.points || 0,
-          totalLessons: result.user.totalLessons || 0
+          totalTopicsLearned: result.user.totalTopicsLearned || 0
         },
         token: result.token
       },
@@ -46,7 +46,7 @@ export class AuthController {
         targetLevel: result.user.targetLevel,
         learningGoal: result.user.learningGoal,
         points: result.user.points || 0,
-        totalLessons: result.user.totalLessons || 0,
+        totalTopicsLearned: result.user.totalTopicsLearned || 0,
         avatarUrl: result.user.avatarUrl,
         phone: result.user.phone,
         bio: result.user.bio,
