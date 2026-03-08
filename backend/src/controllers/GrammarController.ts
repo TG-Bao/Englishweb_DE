@@ -6,9 +6,10 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import { IGrammarService } from "../interfaces/services/GrammarService";
 import { validateCreateGrammar, validateUpdateGrammar } from "../validators/grammarValidators";
 import { sendSuccess } from "../utils/response";
+import { GrammarDocument } from "../models/Grammar";
 
 export class GrammarController {
-  constructor(private grammarService: IGrammarService) {}
+  constructor(private grammarService: IGrammarService) { }
 
   listByLesson = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { lessonId } = req.params;
@@ -30,10 +31,10 @@ export class GrammarController {
   });
 
   update = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const dto = validateUpdateGrammar(req.body);
-    const data = {
+    const { lessonId, ...dto } = validateUpdateGrammar(req.body);
+    const data: Partial<GrammarDocument> = {
       ...dto,
-      ...(dto.lessonId ? { lessonId: new ObjectId(dto.lessonId) } : {})
+      ...(lessonId ? { lessonId: new ObjectId(lessonId) } : {})
     };
 
     const updated = await this.grammarService.update(req.params.id, data);

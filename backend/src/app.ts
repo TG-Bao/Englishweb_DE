@@ -24,9 +24,9 @@ export const createApp = () => {
   app.use("/api/auth", authRoutes);
   app.use("/api/topics", topicRoutes);
   app.use("/api/lessons", lessonRoutes);
-  app.use("/api/vocabulary", vocabularyRoutes);
-  app.use("/api/grammar", grammarRoutes);
-  app.use("/api/quiz", quizRoutes);
+  app.use("/api/vocabularies", vocabularyRoutes);
+  app.use("/api/grammars", grammarRoutes);
+  app.use("/api/quizzes", quizRoutes);
   app.use("/api/questions", questionRoutes);
   app.use("/api/progress", progressRoutes);
   app.use("/api/users", userRoutes);

@@ -12,8 +12,17 @@ export class VocabularyRepository implements IVocabularyRepository {
     return this.collection.find({ lessonId: new ObjectId(lessonId) }).toArray();
   }
 
-  async listByTopic(topic?: string): Promise<VocabularyDocument[]> {
-    const query = topic ? { topic } : {};
+  async list(filters: { lessonId?: string; topic?: string; level?: string; search?: string }): Promise<VocabularyDocument[]> {
+    const query: any = {};
+    if (filters.lessonId) query.lessonId = new ObjectId(filters.lessonId);
+    if (filters.topic) query.topic = filters.topic;
+    if (filters.level) query.level = filters.level;
+    if (filters.search) {
+      query.$or = [
+        { word: { $regex: filters.search, $options: "i" } },
+        { meaning: { $regex: filters.search, $options: "i" } }
+      ];
+    }
     return this.collection.find(query).toArray();
   }
 

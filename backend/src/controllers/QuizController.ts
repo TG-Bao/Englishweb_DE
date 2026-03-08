@@ -8,13 +8,14 @@ import { IQuestionService } from "../interfaces/services/QuestionService";
 import { IProgressService } from "../interfaces/services/ProgressService";
 import { validateCreateQuiz, validateSubmitQuiz, validateUpdateQuiz } from "../validators/quizValidators";
 import { sendSuccess } from "../utils/response";
+import { QuizDocument } from "../models/Quiz";
 
 export class QuizController {
   constructor(
     private quizService: IQuizService,
     private questionService: IQuestionService,
     private progressService: IProgressService
-  ) {}
+  ) { }
 
   list = asyncHandler(async (_req: AuthRequest, res: Response) => {
     const items = await this.quizService.listPublished();
@@ -30,7 +31,7 @@ export class QuizController {
     const dto = validateCreateQuiz(req.body);
 
     const created = await this.quizService.create({
-      scopeType: dto.scopeType,
+      scopeType: dto.scopeType as any,
       scopeId: dto.scopeId ? new ObjectId(dto.scopeId) : undefined,
       title: dto.title,
       passScore: dto.passScore,
@@ -86,10 +87,10 @@ export class QuizController {
   });
 
   update = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const dto = validateUpdateQuiz(req.body);
-    const data = {
-      ...dto,
-      ...(dto.scopeId ? { scopeId: new ObjectId(dto.scopeId) } : {})
+    const { scopeId, ...dto } = validateUpdateQuiz(req.body);
+    const data: Partial<QuizDocument> = {
+      ...dto as Partial<QuizDocument>,
+      ...(scopeId ? { scopeId: new ObjectId(scopeId) } : {})
     };
 
     const updated = await this.quizService.update(req.params.id, data);

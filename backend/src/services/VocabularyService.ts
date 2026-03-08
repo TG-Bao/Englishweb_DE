@@ -3,14 +3,14 @@ import { IVocabularyRepository } from "../interfaces/repositories/VocabularyRepo
 import { IVocabularyService } from "../interfaces/services/VocabularyService";
 
 export class VocabularyService implements IVocabularyService {
-  constructor(private vocabRepo: IVocabularyRepository) {}
+  constructor(private vocabRepo: IVocabularyRepository) { }
 
   listByLesson(lessonId: string) {
     return this.vocabRepo.listByLesson(lessonId);
   }
 
-  listByTopic(topic?: string) {
-    return this.vocabRepo.listByTopic(topic);
+  list(filters: { lessonId?: string; topic?: string; level?: string; search?: string }) {
+    return this.vocabRepo.list(filters);
   }
 
   create(data: Omit<VocabularyDocument, "_id">) {

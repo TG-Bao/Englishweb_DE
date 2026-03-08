@@ -5,15 +5,32 @@ import { AppError } from "../utils/AppError";
 import { IVocabularyService } from "../interfaces/services/VocabularyService";
 import { validateCreateVocabulary, validateUpdateVocabulary } from "../validators/vocabularyValidators";
 import { sendSuccess } from "../utils/response";
+import { VocabularyDocument } from "../models/Vocabulary";
 
 export class VocabularyController {
-  constructor(private vocabService: IVocabularyService) {}
+  constructor(private vocabService: IVocabularyService) { }
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const topic = req.query.topic?.toString();
     const lessonId = req.query.lessonId?.toString();
-    const items = lessonId ? await this.vocabService.listByLesson(lessonId) : await this.vocabService.listByTopic(topic);
-    return sendSuccess(res, items);
+    const level = req.query.level?.toString();
+    const search = req.query.search?.toString();
+
+    const filters = { lessonId, topic, level, search };
+    const items = await this.vocabService.list(filters);
+
+    const formattedItems = items.map(item => ({
+      _id: item._id,
+      word: item.word,
+      meaning: item.meaning,
+      phonetic: item.phonetic,
+      audioUrl: item.audioUrl,
+      example: item.example,
+      topic: item.topic,
+      level: item.level
+    }));
+
+    return sendSuccess(res, formattedItems);
   });
 
   create = asyncHandler(async (req: Request, res: Response) => {
@@ -33,10 +50,10 @@ export class VocabularyController {
   });
 
   update = asyncHandler(async (req: Request, res: Response) => {
-    const dto = validateUpdateVocabulary(req.body);
-    const data = {
+    const { lessonId, ...dto } = validateUpdateVocabulary(req.body);
+    const data: Partial<VocabularyDocument> = {
       ...dto,
-      ...(dto.lessonId ? { lessonId: new ObjectId(dto.lessonId) } : {})
+      ...(lessonId ? { lessonId: new ObjectId(lessonId) } : {})
     };
 
     const updated = await this.vocabService.update(req.params.id, data);

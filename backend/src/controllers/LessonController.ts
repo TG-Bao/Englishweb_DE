@@ -20,7 +20,7 @@ export class LessonController {
     private quizService: IQuizService,
     private questionService: IQuestionService,
     private progressService: IProgressService
-  ) {}
+  ) { }
 
   listByTopic = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { topicId } = req.params;
@@ -109,10 +109,10 @@ export class LessonController {
   });
 
   update = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const dto = validateUpdateLesson(req.body);
+    const { topicId, ...dto } = validateUpdateLesson(req.body);
     const data = {
       ...dto,
-      ...(dto.topicId ? { topicId: new ObjectId(dto.topicId) } : {})
+      ...(topicId ? { topicId: new ObjectId(topicId) } : {})
     };
 
     const updated = await this.lessonService.update(req.params.id, data);
