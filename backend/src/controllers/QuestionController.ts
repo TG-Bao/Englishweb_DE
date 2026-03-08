@@ -6,9 +6,10 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import { IQuestionService } from "../interfaces/services/QuestionService";
 import { validateCreateQuestion, validateUpdateQuestion } from "../validators/questionValidators";
 import { sendSuccess } from "../utils/response";
+import { QuestionDocument } from "../models/Question";
 
 export class QuestionController {
-  constructor(private questionService: IQuestionService) {}
+  constructor(private questionService: IQuestionService) { }
 
   listByQuiz = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { quizId } = req.params;
@@ -21,23 +22,23 @@ export class QuestionController {
 
     const created = await this.questionService.create({
       quizId: new ObjectId(dto.quizId),
-      sourceType: dto.sourceType,
+      sourceType: dto.sourceType as any,
       sourceId: dto.sourceId ? new ObjectId(dto.sourceId) : undefined,
       question: dto.question,
       options: dto.options,
       correctAnswer: dto.correctAnswer,
-      type: dto.type
+      type: dto.type as any
     });
 
     return sendSuccess(res, created, 201);
   });
 
   update = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const dto = validateUpdateQuestion(req.body);
-    const data = {
-      ...dto,
-      ...(dto.quizId ? { quizId: new ObjectId(dto.quizId) } : {}),
-      ...(dto.sourceId ? { sourceId: new ObjectId(dto.sourceId) } : {})
+    const { quizId, sourceId, ...dto } = validateUpdateQuestion(req.body);
+    const data: Partial<QuestionDocument> = {
+      ...dto as Partial<QuestionDocument>,
+      ...(quizId ? { quizId: new ObjectId(quizId) } : {}),
+      ...(sourceId ? { sourceId: new ObjectId(sourceId) } : {})
     };
 
     const updated = await this.questionService.update(req.params.id, data);

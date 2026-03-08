@@ -5,15 +5,33 @@ import { AppError } from "../utils/AppError";
 import { IVocabularyService } from "../interfaces/services/VocabularyService";
 import { validateCreateVocabulary, validateUpdateVocabulary } from "../validators/vocabularyValidators";
 import { sendSuccess } from "../utils/response";
+import { VocabularyDocument } from "../models/Vocabulary";
 
 export class VocabularyController {
-  constructor(private vocabService: IVocabularyService) {}
+  constructor(private vocabService: IVocabularyService) { }
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const topic = req.query.topic?.toString();
     const topicId = req.query.topicId?.toString();
-    const items = topicId ? await this.vocabService.listByTopicId(topicId) : await this.vocabService.listByTopic(topic);
-    sendSuccess(res, items);
+    const level = req.query.level?.toString();
+    const search = req.query.search?.toString();
+
+    const filters = { topicId, topic, level, search };
+    const items = await this.vocabService.list(filters);
+
+    const formattedItems = items.map(item => ({
+      _id: item._id,
+      word: item.word,
+      meaning: item.meaning,
+      phonetic: item.phonetic,
+      audioUrl: item.audioUrl,
+      example: item.example,
+      topic: item.topic,
+      level: item.level,
+      topicId: item.topicId
+    }));
+
+    return sendSuccess(res, formattedItems);
   });
 
   create = asyncHandler(async (req: Request, res: Response) => {
@@ -34,12 +52,13 @@ export class VocabularyController {
 
   update = asyncHandler(async (req: Request, res: Response) => {
     const dto = validateUpdateVocabulary(req.body);
+    const { topicId, ...updateFields } = dto;
     const data: any = {
-      ...dto,
-      ...(dto.topicId ? { topicId: new ObjectId(dto.topicId) } : {})
+      ...updateFields,
+      ...(topicId ? { topicId: new ObjectId(topicId) } : {})
     };
 
-    const updated = await this.vocabService.update(req.params.id, data);
+    const updated = await this.vocabService.update(req.params.id, data as any);
     if (!updated) {
       throw new AppError("Vocabulary not found", 404);
     }

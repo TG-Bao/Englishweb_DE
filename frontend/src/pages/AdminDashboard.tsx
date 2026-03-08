@@ -11,8 +11,9 @@ import { clearAuth, getUser } from "../utils/auth";
 import { topicService } from "../services/TopicService";
 import { quizService } from "../services/QuizService";
 import { levelService, LevelItem } from "../services/LevelService";
+import { userService, UserItem } from "../services/UserService";
 
-type Section = "topics" | "vocabulary" | "grammar" | "quizzes" | "questions" | "levels";
+type Section = "topics" | "vocabulary" | "grammar" | "quizzes" | "questions" | "levels" | "users";
 
 interface Topic { _id: string; title: string; order?: number; level?: string; }
 interface Quiz { _id: string; title: string; scopeType?: string; scopeId?: string; passScore?: number; }
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
   const [grammars, setGrammars] = useState<Grammar[]>([]);
   const [levelsData, setLevelsData] = useState<LevelItem[]>([]);
+  const [users, setUsers] = useState<UserItem[]>([]);
 
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" | null }>({ message: "", type: null });
 
@@ -76,6 +78,13 @@ const AdminDashboard = () => {
   const [levelOrder, setLevelOrder] = useState(1);
   const [editLevelId, setEditLevelId] = useState("");
 
+  const [editUserId, setEditUserId] = useState("");
+  const [editUserName, setEditUserName] = useState("");
+  const [editUserEmail, setEditUserEmail] = useState("");
+  const [editUserRole, setEditUserRole] = useState<"USER" | "ADMIN">("USER");
+  const [editUserIsActive, setEditUserIsActive] = useState(true);
+  const [editUserPoints, setEditUserPoints] = useState(0);
+
   const loadAdminData = async () => {
     try {
       const [topicRes, quizRes, vocabRes, levelRes] = await Promise.all([
@@ -92,6 +101,15 @@ const AdminDashboard = () => {
       if (quizRes.data.data?.length > 0 && !questionQuizId) setQuestionQuizId(quizRes.data.data[0]._id);
     } catch (err) {
       console.error("Failed to load admin data", err);
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to load users", err);
     }
   };
 
@@ -121,7 +139,17 @@ const AdminDashboard = () => {
     setQuestions(res.data.data || []);
   };
 
-  const loadUsers = async () => {}; // Removed
+
+  useEffect(() => {
+    const u = users.find(u => u._id === editUserId);
+    if (u) {
+      setEditUserName(u.name);
+      setEditUserEmail(u.email);
+      setEditUserRole(u.role);
+      setEditUserIsActive(u.isActive !== false);
+      setEditUserPoints(u.points || 0);
+    }
+  }, [editUserId, users]);
 
   const loadLevels = async () => {
     try {
@@ -132,7 +160,7 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => { loadAdminData(); }, []);
+  useEffect(() => { loadAdminData(); loadUsers(); }, []);
   useEffect(() => { if (grammarLevel) loadGrammars(grammarLevel); }, [grammarLevel]);
   useEffect(() => { if (questionQuizId) loadQuestions(questionQuizId); }, [questionQuizId]);
 
@@ -260,6 +288,7 @@ const AdminDashboard = () => {
     { id: "grammar", label: "Ngữ Pháp", icon: <ChevronDown size={24} /> },
     { id: "quizzes", label: "Bài Kiểm Tra", icon: <List size={24} /> },
     { id: "questions", label: "Câu Hỏi", icon: <HelpCircle size={24} /> },
+    { id: "users", label: "Người Dùng", icon: <ShieldCheck size={24} /> },
   ];
 
   const logout = () => { clearAuth(); navigate("/login"); };
@@ -826,6 +855,124 @@ const AdminDashboard = () => {
                     </div>
                   ))}
                   {quizzes.length === 0 && <p style={{ textAlign: "center", color: "#94a3b8", padding: "32px" }}>Chưa có quiz nào.</p>}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ───── USERS ───── */}
+          {activeTab === "users" && (
+            <motion.div key="users" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} style={{ display: "grid", gridTemplateColumns: "380px 1fr", gap: "24px", alignItems: "start" }}>
+              {/* Left: Edit Form */}
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", position: "sticky", top: "24px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "24px", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <ShieldCheck size={24} color="var(--primary)" />
+                  {editUserId ? "Sửa Người Dùng" : "Thông Tin User"}
+                </h2>
+                
+                {!editUserId ? (
+                  <div style={{ padding: "40px 20px", textAlign: "center", background: "#f8fafc", borderRadius: "16px", border: "2px dashed #e2e8f0" }}>
+                    <Search size={32} color="#94a3b8" style={{ marginBottom: "12px" }} />
+                    <p style={{ color: "#64748b", fontSize: "14px", fontWeight: 500 }}>Chọn một người dùng từ danh sách để chỉnh sửa quyền hoặc thông tin.</p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+                    <div>
+                      <label style={labelStyle}>Tên người dùng</label>
+                      <input style={inputStyle} value={editUserName} onChange={e => setEditUserName(e.target.value)} />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Email (Không thể sửa)</label>
+                      <input style={{ ...inputStyle, background: "#f1f5f9", cursor: "not-allowed" }} value={editUserEmail} readOnly />
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div>
+                        <label style={labelStyle}>Vai trò</label>
+                        <select style={inputStyle} value={editUserRole} onChange={e => setEditUserRole(e.target.value as any)}>
+                          <option value="USER">USER</option>
+                          <option value="ADMIN">ADMIN</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={labelStyle}>Trạng thái</label>
+                        <select style={inputStyle} value={editUserIsActive ? "true" : "false"} onChange={e => setEditUserIsActive(e.target.value === "true")}>
+                          <option value="true">Hoạt động</option>
+                          <option value="false">Đang khóa</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Điểm tích lũy</label>
+                      <input type="number" style={inputStyle} value={editUserPoints} onChange={e => setEditUserPoints(Number(e.target.value))} />
+                    </div>
+                    
+                    <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+                      <button 
+                        onClick={async () => {
+                          try {
+                            await userService.update(editUserId, { 
+                              name: editUserName, 
+                              role: editUserRole, 
+                              isActive: editUserIsActive,
+                              points: editUserPoints
+                            });
+                            showNotification("Cập nhật người dùng thành công", "success");
+                            setEditUserId("");
+                            loadUsers();
+                          } catch (err) {
+                            showNotification("Cập nhật thất bại", "error");
+                          }
+                        }}
+                        style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", padding: "14px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, cursor: "pointer" }}
+                      >
+                        <Save size={18} /> Lưu thay đổi
+                      </button>
+                      <button onClick={() => setEditUserId("")} style={{ padding: "14px 20px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "12px", fontWeight: 600, cursor: "pointer" }}>Hủy</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right: User List */}
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+                  <h3 style={{ fontWeight: 800, fontSize: "20px" }}>Danh Sách Người Dùng</h3>
+                  <div style={{ background: "var(--primary)", color: "white", fontWeight: 700, fontSize: "13px", padding: "6px 16px", borderRadius: "99px" }}>{users.length} THÀNH VIÊN</div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {users.map(u => (
+                    <div key={u._id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "18px", borderRadius: "18px", border: "1.5px solid #f1f5f9", transition: "all 0.2s", background: editUserId === u._id ? "#f8fafc" : "white" }}>
+                      <div style={{ width: "48px", height: "48px", borderRadius: "14px", background: u.role === "ADMIN" ? "#fff1f2" : "#f0fdf4", display: "flex", alignItems: "center", justifyContent: "center", color: u.role === "ADMIN" ? "#be123c" : "#15803d", fontWeight: 800, fontSize: "18px" }}>
+                        {u.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontWeight: 700, fontSize: "16px", color: "#1e293b" }}>{u.name}</span>
+                          {u.role === "ADMIN" && <span style={{ background: "#be123c", color: "white", fontSize: "10px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px" }}>ADMIN</span>}
+                          {!u.isActive && <span style={{ background: "#64748b", color: "white", fontSize: "10px", fontWeight: 800, padding: "2px 6px", borderRadius: "4px" }}>BỊ KHÓA</span>}
+                        </div>
+                        <div style={{ fontSize: "13px", color: "#64748b", marginTop: "2px" }}>{u.email} • {u.points || 0} Points</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button onClick={() => setEditUserId(u._id)} style={{ padding: "10px", borderRadius: "12px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b", transition: "all 0.2s" }}><Edit2 size={16} /></button>
+                        <button 
+                          onClick={async () => {
+                            if (u._id === (user as any)?._id) return alert("Bạn không thể xóa chính mình!");
+                            if (confirm(`Xác nhận xóa người dùng ${u.name}?`)) {
+                              await userService.delete(u._id);
+                              loadUsers();
+                              showNotification("Đã xóa người dùng", "success");
+                            }
+                          }}
+                          style={{ padding: "10px", borderRadius: "12px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444", transition: "all 0.2s" }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {users.length === 0 && <p style={{ textAlign: "center", color: "#94a3b8", padding: "40px" }}>Chưa có người dùng nào.</p>}
                 </div>
               </div>
             </motion.div>

@@ -6,6 +6,7 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import { IGrammarService } from "../interfaces/services/GrammarService";
 import { validateCreateGrammar, validateUpdateGrammar } from "../validators/grammarValidators";
 import { sendSuccess } from "../utils/response";
+import { GrammarDocument } from "../models/Grammar";
 
 export class GrammarController {
   constructor(private grammarService: IGrammarService) {}

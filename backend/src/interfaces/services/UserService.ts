@@ -27,7 +27,7 @@ export interface UserSafeView {
     // Thêm mới
     address?: string;
     points?: number;
-    totalLessons?: number;
+    totalTopicsLearned?: number;
 
     // Thời gian
     createdAt?: Date;

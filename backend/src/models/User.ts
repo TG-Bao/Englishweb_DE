@@ -32,7 +32,7 @@ export interface UserDocument {
   // ── Thêm mới ───────────────────────────────────────────────────
   address?: string;         // Địa chỉ
   points?: number;          // Điểm tích lũy
-  totalLessons?: number;    // Tổng số bài học đã hoàn thành
+  totalTopicsLearned?: number;    // Tổng số chủ đề đã hoàn thành
 
   // ── Thời gian ──────────────────────────────────────────────────
   createdAt?: Date;
