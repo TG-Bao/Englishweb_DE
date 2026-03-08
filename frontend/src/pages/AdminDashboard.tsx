@@ -8,8 +8,11 @@ import {
   List, Search
 } from "lucide-react";
 import { clearAuth, getUser } from "../utils/auth";
+import { topicService } from "../services/TopicService";
+import { quizService } from "../services/QuizService";
+import { levelService, LevelItem } from "../services/LevelService";
 
-type Section = "topics" | "vocabulary" | "grammar" | "quizzes" | "questions";
+type Section = "topics" | "vocabulary" | "grammar" | "quizzes" | "questions" | "levels";
 
 interface Topic { _id: string; title: string; order?: number; level?: string; }
 interface Quiz { _id: string; title: string; scopeType?: string; scopeId?: string; passScore?: number; }
@@ -29,6 +32,7 @@ const AdminDashboard = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
   const [grammars, setGrammars] = useState<Grammar[]>([]);
+  const [levelsData, setLevelsData] = useState<LevelItem[]>([]);
 
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" | null }>({ message: "", type: null });
 
@@ -66,16 +70,24 @@ const AdminDashboard = () => {
   const [qType, setQType] = useState("MCQ");
   const [editQuestionId, setEditQuestionId] = useState("");
 
+  const [levelName, setLevelName] = useState("");
+  const [levelDesc, setLevelDesc] = useState("");
+  const [levelMinPoints, setLevelMinPoints] = useState(0);
+  const [levelOrder, setLevelOrder] = useState(1);
+  const [editLevelId, setEditLevelId] = useState("");
+
   const loadAdminData = async () => {
     try {
-      const [topicRes, quizRes, vocabRes] = await Promise.all([
+      const [topicRes, quizRes, vocabRes, levelRes] = await Promise.all([
         api.get("/grammar-topics/all"),
         api.get("/quiz/all"),
-        api.get("/vocabulary")
+        api.get("/vocabulary"),
+        api.get("/levels/all")
       ]);
       setTopics(topicRes.data.data || []);
       setQuizzes(quizRes.data.data || []);
       setVocabularies(vocabRes.data.data || []);
+      setLevelsData(levelRes.data.data || []);
       if (topicRes.data.data?.length > 0 && !vocabTopicId) setVocabTopicId(topicRes.data.data[0]._id);
       if (quizRes.data.data?.length > 0 && !questionQuizId) setQuestionQuizId(quizRes.data.data[0]._id);
     } catch (err) {
@@ -107,6 +119,17 @@ const AdminDashboard = () => {
     if (!quizId) return;
     const res = await api.get(`/questions/quiz/${quizId}`);
     setQuestions(res.data.data || []);
+  };
+
+  const loadUsers = async () => {}; // Removed
+
+  const loadLevels = async () => {
+    try {
+      const res = await levelService.getAll();
+      setLevelsData(res);
+    } catch (err) {
+      console.error("Load levels failed", err);
+    }
   };
 
   useEffect(() => { loadAdminData(); }, []);
@@ -156,6 +179,16 @@ const AdminDashboard = () => {
     }
   }, [editGrammarId, grammars]);
 
+  useEffect(() => {
+    const lvl = levelsData.find(l => l._id === editLevelId);
+    if (lvl) {
+      setLevelName(lvl.name);
+      setLevelDesc(lvl.description || "");
+      setLevelMinPoints(lvl.minPoints || 0);
+      setLevelOrder(lvl.order || 1);
+    }
+  }, [editLevelId, levelsData]);
+
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ message, type });
     setTimeout(() => setNotification({ message: "", type: null }), 3000);
@@ -181,11 +214,18 @@ const AdminDashboard = () => {
       if (message) showNotification(message, "success");
 
       loadAdminData();
+      loadLevels();
       if (activeTab === "grammar") loadGrammars(grammarLevel);
       if (questionQuizId) loadQuestions(questionQuizId);
 
       // Reset forms
-      if (url.includes("vocabulary")) {
+      if (url.includes("levels")) {
+        setLevelName("");
+        setLevelDesc("");
+        setLevelMinPoints(0);
+        setLevelOrder(1);
+        setEditLevelId("");
+      } else if (url.includes("vocabulary")) {
         setWord("");
         setMeaning("");
         setExample("");
@@ -215,7 +255,8 @@ const AdminDashboard = () => {
 
   const navItems = [
     { id: "topics", label: "Chủ Đề", icon: <Layout size={24} /> },
-    { id: "vocabulary", label: "Từ Vựng", icon: <Layers size={24} /> },
+    { id: "levels", label: "Cấp Độ", icon: <Layers size={24} /> },
+    { id: "vocabulary", label: "Từ Vựng", icon: <BookOpen size={24} /> },
     { id: "grammar", label: "Ngữ Pháp", icon: <ChevronDown size={24} /> },
     { id: "quizzes", label: "Bài Kiểm Tra", icon: <List size={24} /> },
     { id: "questions", label: "Câu Hỏi", icon: <HelpCircle size={24} /> },
@@ -358,6 +399,75 @@ const AdminDashboard = () => {
         </AnimatePresence>
 
         <AnimatePresence mode="wait">
+          {/* ───── LEVELS ───── */}
+          {activeTab === "levels" && (
+            <motion.div key="levels" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: "24px" }}>
+                <h2 style={{ fontSize: "22px", fontWeight: 800, marginBottom: "24px" }}>Quản Lý Cấp Độ</h2>
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={labelStyle}>Tên cấp độ (VD: A1, Beginner)</label>
+                  <input style={inputStyle} value={levelName} onChange={e => setLevelName(e.target.value)} />
+                </div>
+                <div style={{ marginBottom: "20px" }}>
+                  <label style={labelStyle}>Mô tả</label>
+                  <input style={inputStyle} value={levelDesc} onChange={e => setLevelDesc(e.target.value)} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+                  <div>
+                    <label style={labelStyle}>Điểm tối thiểu (Min Points)</label>
+                    <input style={inputStyle} type="number" value={levelMinPoints} onChange={e => setLevelMinPoints(Number(e.target.value))} />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Thứ tự (Order)</label>
+                    <input style={inputStyle} type="number" value={levelOrder} onChange={e => setLevelOrder(Number(e.target.value))} />
+                  </div>
+                </div>
+                {!editLevelId ? (
+                  <button
+                    onClick={() => handleAction("POST", "/levels", { name: levelName, description: levelDesc, minPoints: levelMinPoints, order: levelOrder })}
+                    style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
+                  >
+                    <Plus size={18} /> Thêm cấp độ
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    <button
+                      onClick={() => handleAction("PATCH", `/levels/${editLevelId}`, { name: levelName, description: levelDesc, minPoints: levelMinPoints, order: levelOrder })}
+                      style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
+                    >
+                      <Save size={18} /> Lưu thay đổi
+                    </button>
+                    <button onClick={() => { setEditLevelId(""); setLevelName(""); setLevelDesc(""); }} style={{ padding: "14px 20px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "12px", fontWeight: 600, cursor: "pointer" }}>Hủy</button>
+                  </div>
+                )}
+              </div>
+
+              {/* List */}
+              <div style={{ background: "white", borderRadius: "20px", padding: "32px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ fontWeight: 800, fontSize: "17px" }}>Các cấp độ hiện có</h3>
+                  <span style={{ background: "#eef2ff", color: "var(--primary)", fontWeight: 700, fontSize: "12px", padding: "4px 12px", borderRadius: "99px" }}>{levelsData.length} CẤP ĐỘ</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {levelsData.map((lvl) => (
+                    <div key={lvl._id} style={{ display: "flex", alignItems: "center", gap: "16px", padding: "16px 20px", borderRadius: "14px", border: "1.5px solid #f1f5f9", background: "#fafafa" }}>
+                      <span style={{ width: "28px", height: "28px", background: "#eef2ff", color: "var(--primary)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "13px" }}>{lvl.order}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: "16px" }}>{lvl.name}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Min pts: {lvl.minPoints || 0} - {lvl.description}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "4px" }}>
+                        <button onClick={() => setEditLevelId(lvl._id)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b" }}><Edit2 size={15} /></button>
+                        <button onClick={() => handleAction("DELETE", `/levels/${lvl._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
+                      </div>
+                    </div>
+                  ))}
+                  {levelsData.length === 0 && <p style={{ textAlign: "center", color: "#94a3b8", padding: "32px" }}>Chưa có cấp độ nào.</p>}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
           {/* ───── TOPICS ───── */}
           {activeTab === "topics" && (
             <motion.div key="topics" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -373,9 +483,9 @@ const AdminDashboard = () => {
                     <input style={inputStyle} type="number" value={topicOrder} onChange={e => setTopicOrder(Number(e.target.value))} />
                   </div>
                   <div>
-                    <label style={labelStyle}>Cấp độ (A1-C2)</label>
+                    <label style={labelStyle}>Cấp độ</label>
                     <select style={inputStyle} value={topicLevel} onChange={e => setTopicLevel(e.target.value)}>
-                      {LEVELS.map(l => <option key={l}>{l}</option>)}
+                      {levelsData.map(l => <option key={l._id} value={l.name}>{l.name}</option>)}
                     </select>
                   </div>
                 </div>
@@ -572,7 +682,7 @@ const AdminDashboard = () => {
                   <div style={{ marginBottom: "16px" }}>
                     <label style={labelStyle}>Chọn cấp độ</label>
                     <select style={inputStyle} value={grammarLevel} onChange={e => setGrammarLevel(e.target.value)}>
-                      {LEVELS.map(lvl => <option key={lvl} value={lvl}>{lvl}</option>)}
+                      {levelsData.map(lvl => <option key={lvl._id} value={lvl.name}>{lvl.name}</option>)}
                     </select>
                   </div>
                   <div style={{ marginBottom: "16px" }}>
@@ -675,7 +785,7 @@ const AdminDashboard = () => {
                     ) : (
                       <select style={inputStyle} value={quizScopeId} onChange={e => setQuizScopeId(e.target.value)}>
                         <option value="">-- Chọn cấp độ --</option>
-                        {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                        {levelsData.map(l => <option key={l._id} value={l.name}>{l.name}</option>)}
                       </select>
                     )}
                   </div>

@@ -7,6 +7,7 @@ import { QuizDocument, QUIZ_COLLECTION } from "./models/Quiz";
 import { TopicDocument, TOPIC_COLLECTION } from "./models/Topic";
 import { GrammarDocument, GRAMMAR_COLLECTION } from "./models/Grammar";
 import { QuestionDocument, QUESTION_COLLECTION } from "./models/Question";
+import { LevelDocument, LEVEL_COLLECTION } from "./models/Level";
 
 const seed = async () => {
   await connectDb();
@@ -18,6 +19,7 @@ const seed = async () => {
   const grammars = db.getCollection<GrammarDocument>(GRAMMAR_COLLECTION);
   const quizzes = db.getCollection<QuizDocument>(QUIZ_COLLECTION);
   const questions = db.getCollection<QuestionDocument>(QUESTION_COLLECTION);
+  const levels = db.getCollection<LevelDocument>(LEVEL_COLLECTION);
 
   const adminEmail = "admin@example.com";
   const adminPassword = "Admin123";
@@ -34,6 +36,22 @@ const seed = async () => {
     console.log("Created admin user: admin@example.com / Admin123");
   } else {
     console.log("Admin user already exists");
+  }
+
+  const levelCount = await levels.countDocuments();
+  if (levelCount === 0) {
+    const levelData: LevelDocument[] = [
+      { name: "A1", description: "Beginner", minPoints: 0, order: 1, isPublished: true, createdAt: new Date() },
+      { name: "A2", description: "Elementary", minPoints: 100, order: 2, isPublished: true, createdAt: new Date() },
+      { name: "B1", description: "Intermediate", minPoints: 300, order: 3, isPublished: true, createdAt: new Date() },
+      { name: "B2", description: "Upper Intermediate", minPoints: 600, order: 4, isPublished: true, createdAt: new Date() },
+      { name: "C1", description: "Advanced", minPoints: 1000, order: 5, isPublished: true, createdAt: new Date() },
+      { name: "C2", description: "Proficiency", minPoints: 1500, order: 6, isPublished: true, createdAt: new Date() }
+    ];
+    await levels.insertMany(levelData);
+    console.log("Seeded basic levels (A1 to C2)");
+  } else {
+    console.log("Levels already exist");
   }
 
   const topicCount = await topics.countDocuments();
@@ -54,7 +72,7 @@ const seed = async () => {
         isPublished: true
       } as TopicDocument
     ];
-    
+
     await topics.insertMany(topicData);
     const topicList = await topics.find().toArray();
     const topic1 = topicList.find(t => t.title === "Family")!;

@@ -3,6 +3,18 @@ export type AuthUser = {
   name: string;
   email: string;
   role: "USER" | "ADMIN";
+  level?: string;
+  targetLevel?: string;
+  learningGoal?: string;
+  points?: number;
+  totalLessons?: number;
+  avatarUrl?: string;
+  phone?: string;
+  bio?: string;
+  dateOfBirth?: string | Date;
+  gender?: string;
+  createdAt?: string | Date;
+  address?: string;
 };
 
 const TOKEN_KEY = "el_token";
@@ -25,6 +37,18 @@ export const getUser = (): AuthUser | null => {
 export const setAuth = (token: string, user: AuthUser) => {
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
+  window.dispatchEvent(new Event("user-updated"));
+};
+
+export const updateUser = (data: Partial<AuthUser>) => {
+  const current = getUser();
+  if (current) {
+    const updated = { ...current, ...data };
+    localStorage.setItem(USER_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("user-updated"));
+    return updated;
+  }
+  return null;
 };
 
 export const clearAuth = () => {

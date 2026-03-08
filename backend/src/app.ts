@@ -7,6 +7,8 @@ import grammarRoutes from "./routes/grammarRoutes";
 import quizRoutes from "./routes/quizRoutes";
 import questionRoutes from "./routes/questionRoutes";
 import progressRoutes from "./routes/progressRoutes";
+import userRoutes from "./routes/userRoutes";
+import levelRoutes from "./routes/levelRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 import { env } from "./config/env";
 
@@ -25,6 +27,8 @@ export const createApp = () => {
   app.use("/api/quiz", quizRoutes);
   app.use("/api/questions", questionRoutes);
   app.use("/api/progress", progressRoutes);
+  app.use("/api/users", userRoutes);
+  app.use("/api/levels", levelRoutes);
 
   app.use("/api/grammar-topics", topicRoutes); 
   app.use(errorHandler);
