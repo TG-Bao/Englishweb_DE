@@ -7,7 +7,6 @@ import { ProgressService } from "../services/ProgressService";
 import { ProgressRepository } from "../repositories/ProgressRepository";
 import { QuestionService } from "../services/QuestionService";
 import { QuestionRepository } from "../repositories/QuestionRepository";
-import { LessonRepository } from "../repositories/LessonRepository";
 import { TopicRepository } from "../repositories/TopicRepository";
 import { VocabularyRepository } from "../repositories/VocabularyRepository";
 import { GrammarRepository } from "../repositories/GrammarRepository";
@@ -20,7 +19,6 @@ const questionService = new QuestionService(new QuestionRepository());
 const progressRepo = new ProgressRepository();
 const progressService = new ProgressService(
   progressRepo,
-  new LessonRepository(),
   new TopicRepository(),
   new VocabularyRepository(),
   new GrammarRepository(),

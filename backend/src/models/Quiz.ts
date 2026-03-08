@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 
-export type QuizScopeType = "LESSON" | "TOPIC" | "LEVEL";
+export type QuizScopeType = "TOPIC" | "LEVEL";
 
 export interface QuizDocument {
   _id?: ObjectId;

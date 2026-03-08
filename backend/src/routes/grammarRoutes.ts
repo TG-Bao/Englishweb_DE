@@ -9,7 +9,7 @@ const router = Router();
 const grammarService = new GrammarService(new GrammarRepository());
 const grammarController = new GrammarController(grammarService);
 
-router.get("/lesson/:lessonId", authenticate, grammarController.listByLesson);
+router.get("/level/:level", authenticate, grammarController.listByLevel);
 router.post("/", authenticate, authorize(["ADMIN"]), grammarController.create);
 router.patch("/:id", authenticate, authorize(["ADMIN"]), grammarController.update);
 router.delete("/:id", authenticate, authorize(["ADMIN"]), grammarController.remove);

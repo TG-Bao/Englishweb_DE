@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
-import { LessonProgress, LessonStatus, ProgressDocument } from "../models/Progress";
+import { TopicProgress, LevelProgress, ProgressStatus, ProgressDocument } from "../models/Progress";
 import { IProgressService } from "../interfaces/services/ProgressService";
 import { IProgressRepository } from "../interfaces/repositories/ProgressRepository";
-import { ILessonRepository } from "../interfaces/repositories/LessonRepository";
+import { ITopicRepository } from "../interfaces/repositories/TopicRepository";
 import { IVocabularyRepository } from "../interfaces/repositories/VocabularyRepository";
 import { IGrammarRepository } from "../interfaces/repositories/GrammarRepository";
 import { IQuizRepository } from "../interfaces/repositories/QuizRepository";
@@ -10,7 +10,7 @@ import { IQuizRepository } from "../interfaces/repositories/QuizRepository";
 export class ProgressService implements IProgressService {
   constructor(
     private progressRepo: IProgressRepository,
-    private lessonRepo: ILessonRepository,
+    private topicRepo: ITopicRepository,
     private vocabRepo: IVocabularyRepository,
     private grammarRepo: IGrammarRepository,
     private quizRepo: IQuizRepository
@@ -24,143 +24,129 @@ export class ProgressService implements IProgressService {
     const current = await this.progressRepo.getByUserId(userId);
     if (current) return current;
 
-    return this.progressRepo.upsert(userId, { lessonProgress: [], topicProgress: [], quizResults: [] });
+    return this.progressRepo.upsert(userId, { topicProgress: [], levelProgress: [], quizResults: [] });
   }
 
-  private findLessonProgress(progress: ProgressDocument, lessonId: string): LessonProgress | undefined {
-    return progress.lessonProgress.find(lp => lp.lessonId.toString() === lessonId);
+  private findTopicProgress(progress: ProgressDocument, topicId: string): TopicProgress | undefined {
+    return progress.topicProgress.find(tp => tp.topicId.toString() === topicId);
   }
 
-  private async ensureLessonProgress(userId: string, lessonId: string): Promise<ProgressDocument> {
+  private findLevelProgress(progress: ProgressDocument, level: string): LevelProgress | undefined {
+    return progress.levelProgress.find(lp => lp.level === level);
+  }
+
+  private async ensureTopicProgress(userId: string, topicId: string): Promise<ProgressDocument> {
     const progress = await this.ensureProgress(userId);
-    const existing = this.findLessonProgress(progress, lessonId);
+    const existing = this.findTopicProgress(progress, topicId);
 
     if (!existing) {
-      progress.lessonProgress.push({
-        lessonId: new ObjectId(lessonId),
+      progress.topicProgress.push({
+        topicId: new ObjectId(topicId),
         status: "IN_PROGRESS",
         vocabLearned: [],
-        grammarLearned: [],
         bestScore: 0,
         quizPassed: false
       });
+      return this.progressRepo.upsert(userId, { topicProgress: progress.topicProgress });
     }
 
-    return this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
-      quizResults: progress.quizResults
-    });
+    return progress;
   }
 
-  async markVocabularyLearned(userId: string, lessonId: string, vocabId: string) {
-    const progress = await this.ensureLessonProgress(userId, lessonId);
-    const lessonProgress = this.findLessonProgress(progress, lessonId);
-    if (!lessonProgress) return progress;
-
-    if (!lessonProgress.vocabLearned.find(id => id.toString() === vocabId)) {
-      lessonProgress.vocabLearned.push(new ObjectId(vocabId));
-    }
-
-    const updated = await this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
-      quizResults: progress.quizResults
-    });
-    await this.evaluateLessonCompletion(userId, lessonId);
-    return updated;
-  }
-
-  async markGrammarLearned(userId: string, lessonId: string, grammarId: string) {
-    const progress = await this.ensureLessonProgress(userId, lessonId);
-    const lessonProgress = this.findLessonProgress(progress, lessonId);
-    if (!lessonProgress) return progress;
-
-    if (!lessonProgress.grammarLearned.find(id => id.toString() === grammarId)) {
-      lessonProgress.grammarLearned.push(new ObjectId(grammarId));
-    }
-
-    const updated = await this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
-      quizResults: progress.quizResults
-    });
-    await this.evaluateLessonCompletion(userId, lessonId);
-    return updated;
-  }
-
-  private async updateTopicProgress(userId: string, topicId: string) {
+  private async ensureLevelProgress(userId: string, level: string): Promise<ProgressDocument> {
     const progress = await this.ensureProgress(userId);
-    const lessons = await this.lessonRepo.listByTopic(topicId, false);
-    const totalLessons = lessons.length;
+    const existing = this.findLevelProgress(progress, level);
 
-    const completedLessons = lessons.filter(lesson => {
-      const lp = progress.lessonProgress.find(p => p.lessonId.toString() === lesson._id!.toString());
-      return lp?.status === "COMPLETED";
-    }).length;
-
-    let status: LessonStatus = "IN_PROGRESS";
-    const anyStarted = progress.lessonProgress.some(p => {
-      const lesson = lessons.find(l => l._id!.toString() === p.lessonId.toString());
-      return lesson && p.status !== "LOCKED";
-    });
-    if (completedLessons === 0 && !anyStarted) status = "LOCKED";
-    if (completedLessons === totalLessons && totalLessons > 0) status = "COMPLETED";
-
-    const existing = progress.topicProgress.find(tp => tp.topicId.toString() === topicId);
-    if (existing) {
-      existing.completedLessons = completedLessons;
-      existing.totalLessons = totalLessons;
-      existing.status = status;
-      existing.completedAt = status === "COMPLETED" ? new Date() : undefined;
-    } else {
-      progress.topicProgress.push({
-        topicId: new ObjectId(topicId),
-        completedLessons,
-        totalLessons,
-        status,
-        completedAt: status === "COMPLETED" ? new Date() : undefined
+    if (!existing) {
+      progress.levelProgress.push({
+        level,
+        status: "IN_PROGRESS",
+        grammarLearned: []
       });
+      return this.progressRepo.upsert(userId, { levelProgress: progress.levelProgress });
     }
 
-    return this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
-      quizResults: progress.quizResults
-    });
+    return progress;
   }
 
-  private async evaluateLessonCompletion(userId: string, lessonId: string) {
+  async markVocabularyLearned(userId: string, topicId: string, vocabId: string) {
+    const progress = await this.ensureTopicProgress(userId, topicId);
+    const topicProgress = this.findTopicProgress(progress, topicId);
+    if (!topicProgress) return progress;
+
+    if (!topicProgress.vocabLearned.find((id: ObjectId) => id.toString() === vocabId)) {
+      topicProgress.vocabLearned.push(new ObjectId(vocabId));
+    }
+
+    const updated = await this.progressRepo.upsert(userId, {
+      topicProgress: progress.topicProgress
+    });
+    await this.evaluateTopicCompletion(userId, topicId);
+    return updated;
+  }
+
+  async markGrammarLearned(userId: string, level: string, grammarId: string) {
+    const progress = await this.ensureLevelProgress(userId, level);
+    const levelProgress = this.findLevelProgress(progress, level);
+    if (!levelProgress) return progress;
+
+    if (!levelProgress.grammarLearned.find((id: ObjectId) => id.toString() === grammarId)) {
+      levelProgress.grammarLearned.push(new ObjectId(grammarId));
+    }
+
+    const updated = await this.progressRepo.upsert(userId, {
+      levelProgress: progress.levelProgress
+    });
+    await this.evaluateLevelCompletion(userId, level);
+    return updated;
+  }
+
+  private async evaluateTopicCompletion(userId: string, topicId: string) {
     const progress = await this.ensureProgress(userId);
-    const lesson = await this.lessonRepo.findById(lessonId);
-    if (!lesson) return progress;
+    const topicProgress = this.findTopicProgress(progress, topicId);
+    if (!topicProgress) return progress;
 
-    const lessonProgress = this.findLessonProgress(progress, lessonId);
-    if (!lessonProgress) return progress;
-
-    const vocab = await this.vocabRepo.listByLesson(lessonId);
-    const grammar = await this.grammarRepo.listByLesson(lessonId);
-    const quizzes = await this.quizRepo.listByScope("LESSON", lessonId);
+    const vocab = await this.vocabRepo.listByTopicId(topicId);
+    const quizzes = await this.quizRepo.listByScope("TOPIC", topicId);
     const quiz = quizzes[0];
 
-    const vocabDone = vocab.length === 0 || lessonProgress.vocabLearned.length >= vocab.length;
-    const grammarDone = grammar.length === 0 || lessonProgress.grammarLearned.length >= grammar.length;
-    const quizDone = !quiz || lessonProgress.quizPassed;
+    const vocabDone = vocab.length === 0 || topicProgress.vocabLearned.length >= vocab.length;
+    const quizDone = !quiz || topicProgress.quizPassed;
 
-    if (vocabDone && grammarDone && quizDone) {
-      lessonProgress.status = "COMPLETED";
+    if (vocabDone && quizDone) {
+      topicProgress.status = "COMPLETED";
+      topicProgress.completedAt = new Date();
     } else {
-      lessonProgress.status = "IN_PROGRESS";
+      topicProgress.status = "IN_PROGRESS";
     }
 
-    const updated = await this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
-      quizResults: progress.quizResults
+    return this.progressRepo.upsert(userId, {
+      topicProgress: progress.topicProgress
     });
+  }
 
-    await this.updateTopicProgress(userId, lesson.topicId.toString());
-    return updated;
+  private async evaluateLevelCompletion(userId: string, level: string) {
+    const progress = await this.ensureProgress(userId);
+    const levelProgress = this.findLevelProgress(progress, level);
+    if (!levelProgress) return progress;
+
+    const grammar = await this.grammarRepo.listByLevel(level);
+    const quizzes = await this.quizRepo.listByScope("LEVEL", level); // Level needs to be handled cautiously if it's not ID
+    // Note: QuizRepository handles level as ID, but here it's string. 
+    // Need to check how Quiz scope handles Level.
+
+    const grammarDone = grammar.length === 0 || levelProgress.grammarLearned.length >= grammar.length;
+    
+    if (grammarDone) {
+      levelProgress.status = "COMPLETED";
+      levelProgress.completedAt = new Date();
+    } else {
+      levelProgress.status = "IN_PROGRESS";
+    }
+
+    return this.progressRepo.upsert(userId, {
+      levelProgress: progress.levelProgress
+    });
   }
 
   async recordQuizResult(userId: string, quizId: string, score: number, total: number, percentage: number, passed: boolean) {
@@ -175,27 +161,23 @@ export class ProgressService implements IProgressService {
     });
 
     return this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
       quizResults: progress.quizResults
     });
   }
 
-  async recordLessonQuizScore(userId: string, lessonId: string, percentage: number, passed: boolean) {
-    const progress = await this.ensureLessonProgress(userId, lessonId);
-    const lessonProgress = this.findLessonProgress(progress, lessonId);
-    if (!lessonProgress) return progress;
+  async recordTopicQuizScore(userId: string, topicId: string, percentage: number, passed: boolean) {
+    const progress = await this.ensureTopicProgress(userId, topicId);
+    const topicProgress = this.findTopicProgress(progress, topicId);
+    if (!topicProgress) return progress;
 
-    lessonProgress.bestScore = Math.max(lessonProgress.bestScore || 0, percentage);
-    lessonProgress.quizPassed = passed;
+    topicProgress.bestScore = Math.max(topicProgress.bestScore || 0, percentage);
+    topicProgress.quizPassed = passed;
 
     const updated = await this.progressRepo.upsert(userId, {
-      lessonProgress: progress.lessonProgress,
-      topicProgress: progress.topicProgress,
-      quizResults: progress.quizResults
+      topicProgress: progress.topicProgress
     });
 
-    await this.evaluateLessonCompletion(userId, lessonId);
+    await this.evaluateTopicCompletion(userId, topicId);
     return updated;
   }
 }

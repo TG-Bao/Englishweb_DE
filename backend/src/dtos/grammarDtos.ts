@@ -1,12 +1,12 @@
 export type CreateGrammarDto = {
-  lessonId: string;
+  level: string;
   title: string;
   description: string;
   examples: string[];
 };
 
 export type UpdateGrammarDto = {
-  lessonId?: string;
+  level?: string;
   title?: string;
   description?: string;
   examples?: string[];

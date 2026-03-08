@@ -1,5 +1,7 @@
+import { QuizScopeType } from "../models/Quiz";
+
 export type CreateQuizDto = {
-  scopeType: string;
+  scopeType: QuizScopeType;
   scopeId?: string;
   title: string;
   passScore: number;
@@ -7,7 +9,7 @@ export type CreateQuizDto = {
 };
 
 export type UpdateQuizDto = {
-  scopeType?: string;
+  scopeType?: QuizScopeType;
   scopeId?: string;
   title?: string;
   passScore?: number;

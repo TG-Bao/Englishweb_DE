@@ -8,8 +8,8 @@ export class VocabularyRepository implements IVocabularyRepository {
     return Database.getInstance().getCollection<VocabularyDocument>(VOCABULARY_COLLECTION);
   }
 
-  async listByLesson(lessonId: string): Promise<VocabularyDocument[]> {
-    return this.collection.find({ lessonId: new ObjectId(lessonId) }).toArray();
+  async listByTopicId(topicId: string): Promise<VocabularyDocument[]> {
+    return this.collection.find({ topicId: new ObjectId(topicId) }).toArray();
   }
 
   async listByTopic(topic?: string): Promise<VocabularyDocument[]> {
