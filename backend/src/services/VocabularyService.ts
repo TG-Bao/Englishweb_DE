@@ -6,8 +6,12 @@ export class VocabularyService implements IVocabularyService {
   constructor(private vocabRepo: IVocabularyRepository) { }
 
 
-  list(filters: { lessonId?: string; topic?: string; level?: string; search?: string }) {
+  list(filters: { lessonId?: string; topic?: string; level?: string; search?: string; learned?: string }) {
     return this.vocabRepo.list(filters);
+  }
+
+  findById(id: string) {
+    return this.vocabRepo.findById(id);
   }
 
   create(data: Omit<VocabularyDocument, "_id">) {
