@@ -12,6 +12,7 @@ const vocabController = new VocabularyController(vocabService);
 
 router.get("/", AuthMiddleware.authenticate, vocabController.list);
 router.post("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), vocabController.create);
+router.patch("/:id/toggle-learned", AuthMiddleware.authenticate, vocabController.toggleLearned);
 router.patch("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), vocabController.update);
 router.delete("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), vocabController.remove);
 

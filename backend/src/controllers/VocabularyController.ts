@@ -15,19 +15,23 @@ export class VocabularyController {
     const topicId = req.query.topicId?.toString();
     const level = req.query.level?.toString();
     const search = req.query.search?.toString();
+    const learned = req.query.learned?.toString();
 
-    const filters = { topicId, topic, level, search };
+    const filters = { topicId, topic, level, search, learned };
     const items = await this.vocabService.list(filters);
 
     const formattedItems = items.map(item => ({
       _id: item._id,
       word: item.word,
       meaning: item.meaning,
+      definitionVi: item.definitionVi,
       phonetic: item.phonetic,
       audioUrl: item.audioUrl,
       example: item.example,
+      exampleVi: item.exampleVi,
       topic: item.topic,
       level: item.level,
+      learned: item.learned ?? 0,
       topicId: item.topicId
     }));
 
@@ -68,5 +72,15 @@ export class VocabularyController {
   remove = asyncHandler(async (req: Request, res: Response) => {
     await this.vocabService.remove(req.params.id);
     sendSuccess(res, { id: req.params.id }, 200, "Deleted");
+  });
+
+  toggleLearned = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const vocab = await this.vocabService.findById(id);
+    if (!vocab) throw new AppError("Vocabulary not found", 404);
+
+    const newLearned = (vocab.learned ?? 0) === 0 ? 1 : 0;
+    const updated = await this.vocabService.update(id, { learned: newLearned } as any);
+    sendSuccess(res, updated);
   });
 }

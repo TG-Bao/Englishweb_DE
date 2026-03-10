@@ -8,11 +8,12 @@ export class VocabularyRepository implements IVocabularyRepository {
     return Database.getInstance().getCollection<VocabularyDocument>(VOCABULARY_COLLECTION);
   }
 
-  async list(filters: { topicId?: string; topic?: string; level?: string; search?: string }): Promise<VocabularyDocument[]> {
+  async list(filters: { topicId?: string; topic?: string; level?: string; search?: string; learned?: string }): Promise<VocabularyDocument[]> {
     const query: any = {};
     if (filters.topicId) query.topicId = new ObjectId(filters.topicId);
     if (filters.topic) query.topic = filters.topic;
     if (filters.level) query.level = filters.level;
+    if (filters.learned !== undefined) query.learned = parseInt(filters.learned);
     if (filters.search) {
       query.$or = [
         { word: { $regex: filters.search, $options: "i" } },
@@ -20,6 +21,10 @@ export class VocabularyRepository implements IVocabularyRepository {
       ];
     }
     return this.collection.find(query).toArray();
+  }
+
+  async findById(id: string): Promise<VocabularyDocument | null> {
+    return this.collection.findOne({ _id: new ObjectId(id) });
   }
 
   async create(data: Omit<VocabularyDocument, "_id">): Promise<VocabularyDocument> {
