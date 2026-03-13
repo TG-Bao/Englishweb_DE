@@ -12,12 +12,12 @@ export interface GrammarLesson {
 
 export const GrammarService = {
   getByLevel: async (level: string) => {
-    const res = await api.get(`/grammar/level/${level}`);
+    const res = await api.get(`/grammars/level/${level}`);
     return res.data.data as GrammarLesson[];
   },
 
   getById: async (id: string) => {
-    const res = await api.get(`/grammar/${id}`);
+    const res = await api.get(`/grammars/${id}`);
     return res.data.data as GrammarLesson;
   }
 };

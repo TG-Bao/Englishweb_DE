@@ -4,7 +4,6 @@ import { ProgressService } from "../services/ProgressService";
 import { ProgressRepository } from "../repositories/ProgressRepository";
 import { TopicRepository } from "../repositories/TopicRepository";
 import { VocabularyRepository } from "../repositories/VocabularyRepository";
-import { GrammarRepository } from "../repositories/GrammarRepository";
 import { QuizRepository } from "../repositories/QuizRepository";
 import { AuthMiddleware } from "../middleware/authMiddleware";
 
@@ -15,7 +14,6 @@ const progressService = new ProgressService(
   progressRepo,
   new TopicRepository(),
   new VocabularyRepository(),
-  new GrammarRepository(),
   new QuizRepository()
 );
 const progressController = new ProgressController(progressService);

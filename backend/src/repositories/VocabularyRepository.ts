@@ -13,7 +13,14 @@ export class VocabularyRepository implements IVocabularyRepository {
     if (filters.topicId) query.topicId = new ObjectId(filters.topicId);
     if (filters.topic) query.topic = filters.topic;
     if (filters.level) query.level = filters.level;
-    if (filters.learned !== undefined) query.learned = parseInt(filters.learned);
+    if (filters.learned !== undefined) {
+      const learnedVal = parseInt(filters.learned);
+      if (learnedVal === 0) {
+        query.learned = { $ne: 1 };
+      } else {
+        query.learned = learnedVal;
+      }
+    }
     if (filters.search) {
       query.$or = [
         { word: { $regex: filters.search, $options: "i" } },

@@ -5,24 +5,23 @@ import { IGrammarService } from "../interfaces/services/GrammarService";
 export class GrammarService implements IGrammarService {
   constructor(private grammarRepo: IGrammarRepository) {}
 
-
-  listByLevel(level: string) {
+  async listByLevel(level: string): Promise<GrammarDocument[]> {
     return this.grammarRepo.listByLevel(level);
   }
 
-  findById(id: string) {
+  async findById(id: string): Promise<GrammarDocument | null> {
     return this.grammarRepo.findById(id);
   }
 
-  create(data: Omit<GrammarDocument, "_id">) {
+  async create(data: Omit<GrammarDocument, "_id">): Promise<GrammarDocument> {
     return this.grammarRepo.create(data);
   }
 
-  update(id: string, data: Partial<GrammarDocument>) {
+  async update(id: string, data: Partial<GrammarDocument>): Promise<GrammarDocument | null> {
     return this.grammarRepo.update(id, data);
   }
 
-  remove(id: string) {
+  async remove(id: string): Promise<void> {
     return this.grammarRepo.remove(id);
   }
 }

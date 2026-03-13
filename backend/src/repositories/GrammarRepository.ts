@@ -8,7 +8,6 @@ export class GrammarRepository implements IGrammarRepository {
     return Database.getInstance().getCollection<GrammarDocument>(GRAMMAR_COLLECTION);
   }
 
-
   async listByLevel(level: string): Promise<GrammarDocument[]> {
     return this.collection.find({ level }).toArray();
   }
