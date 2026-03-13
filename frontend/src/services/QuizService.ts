@@ -14,6 +14,11 @@ class QuizService {
         return res.data.data as QuizItem[];
     }
 
+    async getByScope(scopeType: string, scopeId: string) {
+        const res = await api.get(`/quiz/scope/${scopeType}/${scopeId}`);
+        return res.data.data;
+    }
+
     async create(data: any) {
         const res = await api.post("/quiz", data);
         return res.data;

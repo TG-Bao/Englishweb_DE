@@ -18,6 +18,15 @@ export class GrammarController {
     sendSuccess(res, items);
   });
 
+  getById = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const item = await this.grammarService.findById(id);
+    if (!item) {
+      throw new AppError("Grammar lesson not found", 404);
+    }
+    sendSuccess(res, item);
+  });
+
   create = asyncHandler(async (req: AuthRequest, res: Response) => {
     const dto = validateCreateGrammar(req.body);
 

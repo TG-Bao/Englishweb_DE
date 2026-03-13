@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import VocabularyPage from "./pages/VocabularyPage";
 import GrammarPage from "./pages/GrammarPage";
+import GrammarDetailPage from "./pages/GrammarDetailPage";
 import ListeningPage from "./pages/ListeningPage";
 import SpeakingPage from "./pages/SpeakingPage";
 import ProfilePage from "./pages/ProfilePage";
@@ -33,6 +34,14 @@ const App = () => {
         element={
           <ProtectedRoute>
             <GrammarPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/grammar/:id"
+        element={
+          <ProtectedRoute>
+            <GrammarDetailPage />
           </ProtectedRoute>
         }
       />
