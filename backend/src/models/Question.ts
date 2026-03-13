@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 
 export type QuestionType = "MCQ" | "FILL" | "LISTEN";
-export type QuestionSourceType = "VOCAB" | "GRAMMAR" | "CUSTOM";
+export type QuestionSourceType = "VOCAB" | "CUSTOM";
 
 export interface QuestionDocument {
   _id?: ObjectId;

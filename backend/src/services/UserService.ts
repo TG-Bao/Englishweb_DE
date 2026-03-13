@@ -24,7 +24,7 @@ export class UserService implements IUserService {
             lastLoginAt: doc.lastLoginAt,
             address: doc.address,
             points: doc.points,
-            totalLessons: doc.totalLessons,
+            totalTopicsLearned: doc.totalTopicsLearned,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
         };

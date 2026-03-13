@@ -3,12 +3,13 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes";
 import topicRoutes from "./routes/topicRoutes";
 import vocabularyRoutes from "./routes/vocabularyRoutes";
-import grammarRoutes from "./routes/grammarRoutes";
 import quizRoutes from "./routes/quizRoutes";
 import questionRoutes from "./routes/questionRoutes";
 import progressRoutes from "./routes/progressRoutes";
 import userRoutes from "./routes/userRoutes";
 import levelRoutes from "./routes/levelRoutes";
+import grammarExerciseRoutes from "./routes/grammarExerciseRoutes";
+import grammarRoutes from "./routes/grammarRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 import { env } from "./config/env";
 
@@ -23,18 +24,18 @@ export const createApp = () => {
   app.use("/api/auth", authRoutes);
   // app.use("/api/topics", topicRoutes);
   app.use("/api/vocabulary", vocabularyRoutes);
-  app.use("/api/grammar", grammarRoutes);
   app.use("/api/quiz", quizRoutes);
   app.use("/api/topics", topicRoutes);
   app.use("/api/vocabularies", vocabularyRoutes);
-  app.use("/api/grammars", grammarRoutes);
   app.use("/api/quizzes", quizRoutes);
   app.use("/api/questions", questionRoutes);
   app.use("/api/progress", progressRoutes);
   app.use("/api/users", userRoutes);
   app.use("/api/levels", levelRoutes);
 
+  app.use("/api/grammars", grammarRoutes); 
   app.use("/api/grammar-topics", topicRoutes); 
+  app.use("/api/grammar-exercises", grammarExerciseRoutes);
   app.use(errorHandler);
 
   return app;

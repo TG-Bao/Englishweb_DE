@@ -4,7 +4,6 @@ import { IProgressService } from "../interfaces/services/ProgressService";
 import { IProgressRepository } from "../interfaces/repositories/ProgressRepository";
 import { ITopicRepository } from "../interfaces/repositories/TopicRepository";
 import { IVocabularyRepository } from "../interfaces/repositories/VocabularyRepository";
-import { IGrammarRepository } from "../interfaces/repositories/GrammarRepository";
 import { IQuizRepository } from "../interfaces/repositories/QuizRepository";
 
 export class ProgressService implements IProgressService {
@@ -12,7 +11,6 @@ export class ProgressService implements IProgressService {
     private progressRepo: IProgressRepository,
     private topicRepo: ITopicRepository,
     private vocabRepo: IVocabularyRepository,
-    private grammarRepo: IGrammarRepository,
     private quizRepo: IQuizRepository
   ) {}
 
@@ -86,19 +84,8 @@ export class ProgressService implements IProgressService {
   }
 
   async markGrammarLearned(userId: string, level: string, grammarId: string) {
-    const progress = await this.ensureLevelProgress(userId, level);
-    const levelProgress = this.findLevelProgress(progress, level);
-    if (!levelProgress) return progress;
-
-    if (!levelProgress.grammarLearned.find((id: ObjectId) => id.toString() === grammarId)) {
-      levelProgress.grammarLearned.push(new ObjectId(grammarId));
-    }
-
-    const updated = await this.progressRepo.upsert(userId, {
-      levelProgress: progress.levelProgress
-    });
-    await this.evaluateLevelCompletion(userId, level);
-    return updated;
+    // Để trống hoặc xử lý sau khi có hệ thống Grammar mới
+    return this.ensureProgress(userId);
   }
 
   private async evaluateTopicCompletion(userId: string, topicId: string) {
@@ -106,7 +93,7 @@ export class ProgressService implements IProgressService {
     const topicProgress = this.findTopicProgress(progress, topicId);
     if (!topicProgress) return progress;
 
-    const vocab = await this.vocabRepo.listByTopicId(topicId);
+    const vocab = await this.vocabRepo.list({ topicId });
     const quizzes = await this.quizRepo.listByScope("TOPIC", topicId);
     const quiz = quizzes[0];
 
@@ -130,19 +117,9 @@ export class ProgressService implements IProgressService {
     const levelProgress = this.findLevelProgress(progress, level);
     if (!levelProgress) return progress;
 
-    const grammar = await this.grammarRepo.listByLevel(level);
-    const quizzes = await this.quizRepo.listByScope("LEVEL", level); // Level needs to be handled cautiously if it's not ID
-    // Note: QuizRepository handles level as ID, but here it's string. 
-    // Need to check how Quiz scope handles Level.
-
-    const grammarDone = grammar.length === 0 || levelProgress.grammarLearned.length >= grammar.length;
-    
-    if (grammarDone) {
-      levelProgress.status = "COMPLETED";
-      levelProgress.completedAt = new Date();
-    } else {
-      levelProgress.status = "IN_PROGRESS";
-    }
+    // Tạm thời đánh dấu là xong nếu không có logic Grammar cũ
+    levelProgress.status = "COMPLETED";
+    levelProgress.completedAt = new Date();
 
     return this.progressRepo.upsert(userId, {
       levelProgress: progress.levelProgress

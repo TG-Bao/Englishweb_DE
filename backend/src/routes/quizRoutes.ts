@@ -9,7 +9,6 @@ import { QuestionService } from "../services/QuestionService";
 import { QuestionRepository } from "../repositories/QuestionRepository";
 import { TopicRepository } from "../repositories/TopicRepository";
 import { VocabularyRepository } from "../repositories/VocabularyRepository";
-import { GrammarRepository } from "../repositories/GrammarRepository";
 
 const router = Router();
 
@@ -21,7 +20,6 @@ const progressService = new ProgressService(
   progressRepo,
   new TopicRepository(),
   new VocabularyRepository(),
-  new GrammarRepository(),
   quizRepo
 );
 const quizController = new QuizController(quizService, questionService, progressService);

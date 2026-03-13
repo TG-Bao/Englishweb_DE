@@ -6,11 +6,11 @@ import { AuthMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
-const grammarService = new GrammarService(new GrammarRepository());
+const grammarRepo = new GrammarRepository();
+const grammarService = new GrammarService(grammarRepo);
 const grammarController = new GrammarController(grammarService);
 
 router.get("/level/:level", AuthMiddleware.authenticate, grammarController.listByLevel);
-router.get("/:id", AuthMiddleware.authenticate, grammarController.getById);
 router.post("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), grammarController.create);
 router.patch("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), grammarController.update);
 router.delete("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), grammarController.remove);

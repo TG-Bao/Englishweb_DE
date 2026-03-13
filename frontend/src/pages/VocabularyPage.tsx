@@ -57,7 +57,7 @@ const VocabularyPage = () => {
       setVocabularies(res.data.data);
 
       // Extract unique topics for the filter dropdown
-      if (!selectedTopic && !searchQuery && !selectedLevel) {
+      if (!selectedTopic && !searchQuery) {
         const uniqueTopics = Array.from(new Set(res.data.data.map((v: Vocabulary) => v.topic))) as string[];
         setTopics(uniqueTopics);
       }

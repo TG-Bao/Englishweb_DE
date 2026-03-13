@@ -4,6 +4,8 @@ export interface TopicDocument {
   _id?: ObjectId;
   title: string;
   description?: string;
+  theory?: string;
+  examples?: string[];
   order: number;
   level: string;
   isPublished: boolean;
