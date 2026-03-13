@@ -4,7 +4,7 @@ export type GrammarExerciseType = "MCQ" | "FILL";
 
 export interface GrammarExerciseDocument {
   _id?: ObjectId;
-  topicId: ObjectId;
+  grammarId: ObjectId;
   question: string;
   type: GrammarExerciseType;
   explanation?: string;

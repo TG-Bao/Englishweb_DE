@@ -9,8 +9,8 @@ export class GrammarExerciseService {
     private resultRepo: UserExerciseResultRepository
   ) {}
 
-  async getExercisesByTopic(topicId: string) {
-    const exercises = await this.exerciseRepo.findByTopic(topicId);
+  async getExercisesByGrammar(grammarId: string) {
+    const exercises = await this.exerciseRepo.findByGrammar(grammarId);
     if (!exercises.length) return [];
 
     const exerciseIds = exercises.map(e => e._id!.toString());

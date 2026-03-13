@@ -7,8 +7,8 @@ export class GrammarExerciseRepository {
     return Database.getInstance().getCollection<GrammarExerciseDocument>(GRAMMAR_EXERCISE_COLLECTION);
   }
 
-  async findByTopic(topicId: string): Promise<GrammarExerciseDocument[]> {
-    return this.collection.find({ topicId: new ObjectId(topicId) }).toArray();
+  async findByGrammar(grammarId: string): Promise<GrammarExerciseDocument[]> {
+    return this.collection.find({ grammarId: new ObjectId(grammarId) }).toArray();
   }
 
   async findById(id: string): Promise<GrammarExerciseDocument | null> {

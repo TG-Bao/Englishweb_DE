@@ -4,14 +4,14 @@ import { GrammarExerciseService } from "../services/GrammarExerciseService";
 export class GrammarExerciseController {
   constructor(private exerciseService: GrammarExerciseService) {}
 
-  listByTopic = async (req: Request, res: Response) => {
+  listByGrammar = async (req: Request, res: Response) => {
     try {
-      const { topicId } = req.query;
-      if (!topicId) {
-        return res.status(400).json({ message: "Thiếu topicId" });
+      const { grammarId } = req.query;
+      if (!grammarId) {
+        return res.status(400).json({ message: "Thiếu grammarId" });
       }
 
-      const exercises = await this.exerciseService.getExercisesByTopic(topicId as string);
+      const exercises = await this.exerciseService.getExercisesByGrammar(grammarId as string);
       res.json(exercises);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

@@ -16,7 +16,7 @@ const exerciseService = new GrammarExerciseService(exerciseRepo, optionRepo, res
 const exerciseController = new GrammarExerciseController(exerciseService);
 
 // Định nghĩa các route
-router.get("/", AuthMiddleware.authenticate, exerciseController.listByTopic);
+router.get("/", AuthMiddleware.authenticate, exerciseController.listByGrammar);
 router.post("/submit", AuthMiddleware.authenticate, exerciseController.submit);
 
 export default router;

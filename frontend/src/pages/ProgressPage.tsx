@@ -170,8 +170,8 @@ const ProgressPage = () => {
 
           {/* Sidebar Info */}
           <aside style={{ flex: '0 0 320px', width: '100%' }}>
-            <div className="card" style={{ padding: '24px', background: 'var(--secondary)', color: 'white' }}>
-              <h3 style={{ color: 'white', marginBottom: '16px' }}>Mục tiêu tuần này</h3>
+            <div className="card" style={{ padding: '24px', background: 'var(--secondary)', color: 'var(--white)' }}>
+              <h3 style={{ color: 'var(--white)', marginBottom: '16px' }}>Mục tiêu tuần này</h3>
               <p style={{ opacity: 0.8, fontSize: '14px', marginBottom: '24px' }}>
                 Hoàn thành thêm 5 bài học và 2 bài kiểm tra để duy trì chuỗi học tập (streak)!
               </p>

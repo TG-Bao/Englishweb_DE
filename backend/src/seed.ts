@@ -60,12 +60,19 @@ const seed = async () => {
   console.log("Levels created");
 
   // 3. Seed Grammar (Lý Thuyết)
-  await grammars.insertMany([
+  const grammarResults = await grammars.insertMany([
     {
       level: "A1",
       title: "Possessive Pronouns",
       description: "Sử dụng my, your, his, her, our, their để chỉ sự sở hữu.",
       examples: ["This is my brother.", "Their house is big."],
+      createdAt: new Date()
+    } as GrammarDocument,
+    {
+      level: "A2",
+      title: "First Conditional",
+      description: "Câu điều kiện loại 1 dùng để diễn tả một sự việc có thể xảy ra ở hiện tại hoặc tương lai nếu điều kiện được đáp ứng: If + S + V(s/es), S + will + V.",
+      examples: ["If it rains, we will stay at home.", "She will pass the exam if she studies hard."],
       createdAt: new Date()
     } as GrammarDocument,
     {
@@ -76,6 +83,8 @@ const seed = async () => {
       createdAt: new Date()
     } as GrammarDocument
   ]);
+  const firstConditionalGrammarId = grammarResults.insertedIds[1];
+  const presentSimpleGrammarId = grammarResults.insertedIds[2];
   console.log("Grammar lessons created");
 
   // 4. Seed Topics
@@ -136,7 +145,7 @@ const seed = async () => {
   // 6. Seed Grammar Exercises
   // Exercise 1: Present Simple MCQ
   const ex1 = await grammarExercises.insertOne({
-    topicId: presentSimpleTopicId,
+    grammarId: presentSimpleGrammarId,
     question: "He ___ breakfast at 7 AM every day.",
     type: "MCQ",
     explanation: "With 'He/She/It', we add 's' or 'es' to the verb in Present Simple.",
@@ -150,7 +159,7 @@ const seed = async () => {
 
   // Exercise 2: Present Simple FILL
   const ex2 = await grammarExercises.insertOne({
-    topicId: presentSimpleTopicId,
+    grammarId: presentSimpleGrammarId,
     question: "Do they ___ (like) music?",
     type: "FILL",
     explanation: "In questions with 'Do', the main verb remains in base form.",
@@ -165,7 +174,7 @@ const seed = async () => {
 
   // Exercise 3: Past Simple MCQ
   const ex3 = await grammarExercises.insertOne({
-    topicId: pastSimpleTopicId,
+    grammarId: presentSimpleGrammarId,
     question: "We ___ to the cinema last night.",
     type: "MCQ",
     explanation: "The past simple of 'go' is 'went'.",
@@ -178,6 +187,80 @@ const seed = async () => {
   ] as ExerciseOptionDocument[]);
 
   console.log("Grammar exercises created");
+
+  // Exercise 4: First Conditional MCQ (Dễ)
+  const ex4 = await grammarExercises.insertOne({
+    grammarId: firstConditionalGrammarId,
+    question: "If it ___, I will stay at home.",
+    type: "MCQ",
+    explanation: "Mệnh đề 'If' trong câu điều kiện loại 1 dùng thì hiện tại đơn (rains).",
+    createdAt: new Date()
+  });
+  await exerciseOptions.insertMany([
+    { exerciseId: ex4.insertedId, content: "rain", isCorrect: false, createdAt: new Date() },
+    { exerciseId: ex4.insertedId, content: "rains", isCorrect: true, createdAt: new Date() },
+    { exerciseId: ex4.insertedId, content: "will rain", isCorrect: false, createdAt: new Date() }
+  ] as ExerciseOptionDocument[]);
+
+  // Exercise 5: First Conditional MCQ (Đảo mệnh đề)
+  const ex5 = await grammarExercises.insertOne({
+    grammarId: firstConditionalGrammarId,
+    question: "She will go to the party if she ___ early.",
+    type: "MCQ",
+    explanation: "Tương tự, mệnh đề 'if' vẫn phải dùng hiện tại đơn (finishes) dù nó đứng ở vế sau.",
+    createdAt: new Date()
+  });
+  await exerciseOptions.insertMany([
+    { exerciseId: ex5.insertedId, content: "finishes", isCorrect: true, createdAt: new Date() },
+    { exerciseId: ex5.insertedId, content: "finish", isCorrect: false, createdAt: new Date() },
+    { exerciseId: ex5.insertedId, content: "will finish", isCorrect: false, createdAt: new Date() }
+  ] as ExerciseOptionDocument[]);
+
+  // Exercise 6: First Conditional FILL (Điền động từ khuyết thiếu)
+  const ex6 = await grammarExercises.insertOne({
+    grammarId: firstConditionalGrammarId,
+    question: "If you eat too much, you ___ get fat.",
+    type: "FILL",
+    explanation: "Mệnh đề chính dùng 'will' để chỉ kết quả tương lai.",
+    createdAt: new Date()
+  });
+  await exerciseOptions.insertOne({
+    exerciseId: ex6.insertedId,
+    content: "will",
+    isCorrect: true,
+    createdAt: new Date()
+  } as ExerciseOptionDocument);
+
+  // Exercise 7: First Conditional FILL (Phủ định)
+  const ex7 = await grammarExercises.insertOne({
+    grammarId: firstConditionalGrammarId,
+    question: "If he ___ (not/call) me, I will be sad.",
+    type: "FILL",
+    explanation: "Phủ định hiện tại đơn của 'he' là 'doesn't call' hoặc 'does not call'.",
+    createdAt: new Date()
+  });
+  await exerciseOptions.insertOne({
+    exerciseId: ex7.insertedId,
+    content: "doesn't call",
+    isCorrect: true,
+    createdAt: new Date()
+  } as ExerciseOptionDocument);
+
+  // Exercise 8: First Conditional MCQ (Dấu hiệu Unless)
+  const ex8 = await grammarExercises.insertOne({
+    grammarId: firstConditionalGrammarId,
+    question: "___ you hurry up, we will miss the train.",
+    type: "MCQ",
+    explanation: "'Unless' = 'If not', mang nghĩa 'Trừ khi bạn nhanh lên...'",
+    createdAt: new Date()
+  });
+  await exerciseOptions.insertMany([
+    { exerciseId: ex8.insertedId, content: "If", isCorrect: false, createdAt: new Date() },
+    { exerciseId: ex8.insertedId, content: "Unless", isCorrect: true, createdAt: new Date() },
+    { exerciseId: ex8.insertedId, content: "When", isCorrect: false, createdAt: new Date() }
+  ] as ExerciseOptionDocument[]);
+
+  console.log("Mock First Conditional Grammar Exercises created");
 
   console.log("Seed finished successfully!");
   process.exit(0);

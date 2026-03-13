@@ -12,6 +12,7 @@ import LessonDetailPage from "./pages/LessonDetailPage";
 import QuizPage from "./pages/QuizPage";
 import ProgressPage from "./pages/ProgressPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import GrammarExercisePage from "./pages/GrammarExercisePage";
 import { ProtectedRoute } from "./router/ProtectedRoute";
 
 const App = () => {
@@ -42,6 +43,14 @@ const App = () => {
         element={
           <ProtectedRoute>
             <GrammarDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/grammar-exercise/:id"
+        element={
+          <ProtectedRoute>
+            <GrammarExercisePage />
           </ProtectedRoute>
         }
       />
