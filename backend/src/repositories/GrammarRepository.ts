@@ -13,6 +13,10 @@ export class GrammarRepository implements IGrammarRepository {
     return this.collection.find({ level }).toArray();
   }
 
+  async findById(id: string): Promise<GrammarDocument | null> {
+    return this.collection.findOne({ _id: new ObjectId(id) });
+  }
+
   async create(data: Omit<GrammarDocument, "_id">): Promise<GrammarDocument> {
     const result = await this.collection.insertOne(data as GrammarDocument);
     return { ...data, _id: result.insertedId } as GrammarDocument;

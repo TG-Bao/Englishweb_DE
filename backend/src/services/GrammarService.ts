@@ -10,6 +10,10 @@ export class GrammarService implements IGrammarService {
     return this.grammarRepo.listByLevel(level);
   }
 
+  findById(id: string) {
+    return this.grammarRepo.findById(id);
+  }
+
   create(data: Omit<GrammarDocument, "_id">) {
     return this.grammarRepo.create(data);
   }

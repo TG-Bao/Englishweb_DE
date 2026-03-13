@@ -86,6 +86,19 @@ export class QuizController {
     sendSuccess(res, { quiz, questions });
   });
 
+  getByScope = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { scopeType, scopeId } = req.params;
+    const quizzes = await this.quizService.listByScope(scopeType, scopeId);
+    if (!quizzes || quizzes.length === 0) {
+      throw new AppError("Quiz not found for this scope", 404);
+    }
+    
+    // We assume there's only one quiz per scope (or we just take the first one)
+    const quiz = quizzes[0];
+    const questions = await this.questionService.listByQuiz(quiz._id!.toString());
+    sendSuccess(res, { quiz, questions });
+  });
+
   update = asyncHandler(async (req: AuthRequest, res: Response) => {
     const dto = validateUpdateQuiz(req.body);
     const { scopeId, ...rest } = dto;

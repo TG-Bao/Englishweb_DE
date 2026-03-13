@@ -33,5 +33,6 @@ router.post("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]
 router.patch("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), quizController.update);
 router.delete("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), quizController.remove);
 router.post("/submit", AuthMiddleware.authenticate, quizController.submit);
+router.get("/scope/:scopeType/:scopeId", AuthMiddleware.authenticate, quizController.getByScope);
 
 export default router;

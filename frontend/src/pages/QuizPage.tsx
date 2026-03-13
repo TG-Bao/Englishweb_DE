@@ -37,8 +37,19 @@ const QuizPage = () => {
 
   useEffect(() => {
     const quizIdFromUrl = searchParams.get("quizId");
+    const scopeTypeFromUrl = searchParams.get("scopeType");
+    const scopeIdFromUrl = searchParams.get("scopeId");
+
     if (quizIdFromUrl) {
       setSelectedQuizId(quizIdFromUrl);
+    } else if (scopeTypeFromUrl && scopeIdFromUrl) {
+      api.get(`/quiz/scope/${scopeTypeFromUrl}/${scopeIdFromUrl}`)
+        .then(res => {
+          setSelectedQuizId(res.data.data.quiz._id);
+        })
+        .catch(err => {
+          console.error("Failed to fetch quiz by scope", err);
+        });
     } else if (quizzes.length > 0) {
       // Logic for initial selection if no quizId in URL
     }
