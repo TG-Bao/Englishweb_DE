@@ -1,27 +1,52 @@
 :root {
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-light: #eef2ff;
-  --secondary: #0f172a;
-  --bg: #f8fafc;
-  --white: #ffffff;
-  --text: #1e293b;
-  --text-muted: #64748b;
-  --border: #e2e8f0;
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  /* Clean White SaaS Theme */
+  --primary: #6c63ff; /* Violet Primary */
+  --primary-hover: #5a52d5;
+  --primary-light: rgba(108, 99, 255, 0.1);
+
+  --secondary: #5ac8fa; /* Cyan Highlight */
+  --secondary-hover: #48a0c8;
+
+  /* Background gradients */
+  --bg: #f8f9fc; /* Soft Light Gray Background */
+
+  --white: #ffffff; /* Pure White for Cards */
+  --card-bg-dark: #1e1e2f; /* Fallback for isolated dark cases if necessary */
+
+  --text: #1e1e2f; /* Primary Text */
+  --text-inverse: #ffffff; /* Text on dark buttons/cards */
+  --text-muted: #6b6b8d; /* Secondary Text */
+
+  --border: #eaeaf2; /* Soft Border */
+
+  /* Soft and Balanced Shadows */
+  --shadow-sm:
+    0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025);
   --shadow-lg:
-    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --radius: 12px;
-  --radius-lg: 20px;
-  --radius-sm: 8px;
+    0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+
+  /* Playful Corners */
+  --radius: 16px;
+  --radius-lg: 24px;
+  --radius-sm: 12px;
   --max-width: 1280px;
 
   /* Accent Colors */
   --yellow: #f59e0b;
   --green: #10b981;
-  --pink: #ec4899;
+  --pink: #ff8fd8; /* Secondary Accent */
   --indigo: #6366f1;
+}
+
+.dark {
+  /* Brown Dark Mode */
+  --bg: #2a2421; /* Dark coffee brown */
+  --white: #3e3531; /* Elevated brown for cards */
+  --text: #fdfbf7;
+  --text-muted: #bdb5ad;
+  --border: #524741;
 }
 
 * {
@@ -31,12 +56,10 @@
 }
 
 body {
-  font-family:
-    "Inter",
-    system-ui,
-    -apple-system,
-    sans-serif;
+  font-family: "Poppins", "Nunito", sans-serif;
   background-color: var(--bg);
+  /* Clean Soft White Background */
+  background-image: none; /* Removed heavy gradients */
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -65,25 +88,34 @@ h4 {
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
+  border-radius: 100px; /* SaaS cute rounded buttons */
   font-weight: 600;
   font-size: 0.875rem;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 1px solid transparent;
   gap: 0.5rem;
 }
 
+/* Bold Accent Buttons */
 .btn-primary {
-  background-color: var(--primary);
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    #8b85ff
+  ); /* Violet Gradient */
   color: white;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 8px 20px rgba(108, 99, 255, 0.25);
+  border: none;
 }
 
 .btn-primary:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 12px 28px rgba(108, 99, 255, 0.4);
+}
+
+.dark .btn-primary {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 .btn-secondary {
@@ -112,42 +144,60 @@ h4 {
   background: var(--white);
   border-radius: var(--radius);
   padding: 2rem;
+  box-shadow: var(--shadow);
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  color: var(--text);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s ease;
+}
+
+.dark .card {
+  background: var(--white);
+  color: var(--text);
+  border: 1px solid var(--border);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 
-/* Navbar */
+/* Navbar Light SaaS Style */
 .navbar {
-  height: 4rem;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.85); /* Light translucent */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 1000;
   border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  color: var(--text);
+}
+
+.dark .navbar {
+  background: rgba(42, 36, 33, 0.85); /* Dark brown translucent */
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1.375rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--primary);
 }
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
 .nav-item {
@@ -160,8 +210,6 @@ h4 {
 }
 
 .nav-link {
-  font-weight: 500;
-  font-size: 0.9375rem;
   color: var(--text-muted);
   transition: color 0.2s;
 }
@@ -268,7 +316,7 @@ h4 {
   height: 2.5rem;
   border-radius: 9999px;
   background: var(--primary);
-  color: var(--white);
+  color: #ffffff; /* always bright on avatar primary background */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,7 +361,7 @@ h4 {
   align-items: center;
   justify-content: center;
   padding: 3rem 1.5rem;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  background: var(--bg);
 }
 
 .auth-card {
@@ -504,7 +552,9 @@ h4 {
   background: var(--white);
   display: flex;
   flex-direction: column;
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
   overflow: hidden;
 }
 
@@ -515,12 +565,30 @@ h4 {
 
 .vocab-card-back {
   transform: rotateY(180deg);
-  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  background: var(--primary);
   border: none;
   color: white;
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+
+.btn-soft-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--secondary)
+  ); /* Violet to Cyan */
+  color: white;
+  border: none;
+  border-radius: 100px;
+  box-shadow: 0 8px 20px rgba(108, 99, 255, 0.2);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-soft-gradient:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 12px 28px rgba(90, 200, 250, 0.4); /* Glowing Cyan shadow */
 }
 
 .vocab-card-back:hover {
@@ -552,6 +620,118 @@ h4 {
   100% {
     background-position: 200% 0;
   }
+}
+
+/* Dashboard Badge Utilities */
+.pastel-icon-box {
+  padding: 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.pastel-box-green {
+  background: #e6fff4;
+  color: #10b981;
+  box-shadow: none;
+}
+.pastel-box-yellow {
+  background: #fef3c7;
+  color: #f59e0b;
+  box-shadow: none;
+}
+.pastel-box-pink {
+  background: #fce7f3;
+  color: #ec4899;
+  box-shadow: none;
+}
+.pastel-box-indigo {
+  background: #dbeafe;
+  color: #3b82f6;
+  box-shadow: none;
+}
+.pastel-box-primary {
+  background: var(--primary-light);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+/* In Clean White SaaS, dark mode follows its own pastel variants */
+.dark .pastel-box-green {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  box-shadow: none;
+}
+.dark .pastel-box-yellow {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  box-shadow: none;
+}
+.dark .pastel-box-pink {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+  box-shadow: none;
+}
+.dark .pastel-box-indigo {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  box-shadow: none;
+}
+.dark .pastel-box-primary {
+  background: rgba(108, 99, 255, 0.15);
+  color: var(--primary);
+  box-shadow: none;
+}
+
+/* Featured Course Card */
+/* Featured Course Card SaaS Style */
+.featured-course-card {
+  padding: 32px;
+  background: linear-gradient(
+    135deg,
+    var(--primary),
+    var(--secondary)
+  ); /* Purple to Cyan */
+  color: white;
+  border-radius: 24px;
+  box-shadow: 0 16px 32px rgba(108, 99, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.featured-course-card h3 {
+  color: white;
+}
+
+.dark .featured-course-card {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  box-shadow: 0 16px 32px rgba(108, 99, 255, 0.25);
+}
+
+.dark .featured-course-card h3 {
+  color: white;
+}
+
+.featured-card-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  margin-bottom: 16px;
+  font-size: 12px;
+  font-weight: 800;
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 99px;
+  backdrop-filter: blur(4px);
+}
+
+.dark .featured-card-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 @media (max-width: 768px) {

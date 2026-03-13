@@ -333,13 +333,13 @@ const VocabularyPage = () => {
                     transition={{ delay: i * 0.05 }}
                   >
                     <div className="card" style={{ height: '320px', padding: '28px' }}>
-                      <div style={{ height: '24px', width: '50%', borderRadius: '8px', background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease infinite', marginBottom: '16px' }} />
-                      <div style={{ height: '14px', width: '35%', borderRadius: '8px', background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease infinite', marginBottom: '24px' }} />
-                      <div style={{ height: '16px', width: '70%', borderRadius: '8px', background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease infinite', marginBottom: '12px' }} />
+                      <div style={{ height: '24px', width: '50%', borderRadius: '8px', background: 'var(--border)', animation: 'shimmer 1.5s ease infinite', marginBottom: '16px' }} />
+                      <div style={{ height: '14px', width: '35%', borderRadius: '8px', background: 'var(--border)', animation: 'shimmer 1.5s ease infinite', marginBottom: '24px' }} />
+                      <div style={{ height: '16px', width: '70%', borderRadius: '8px', background: 'var(--border)', animation: 'shimmer 1.5s ease infinite', marginBottom: '12px' }} />
                       <div style={{ flex: 1 }} />
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <div style={{ height: '24px', width: '60px', borderRadius: '99px', background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease infinite' }} />
-                        <div style={{ height: '24px', width: '80px', borderRadius: '99px', background: 'linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease infinite' }} />
+                        <div style={{ height: '24px', width: '60px', borderRadius: '99px', background: 'var(--border)', animation: 'shimmer 1.5s ease infinite' }} />
+                        <div style={{ height: '24px', width: '80px', borderRadius: '99px', background: 'var(--border)', animation: 'shimmer 1.5s ease infinite' }} />
                       </div>
                     </div>
                   </motion.div>

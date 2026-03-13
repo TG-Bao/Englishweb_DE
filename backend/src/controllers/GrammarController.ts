@@ -13,6 +13,15 @@ export class GrammarController {
     sendSuccess(res, grammars);
   });
 
+  getById = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id;
+    const grammar = await this.grammarService.findById(id);
+    if (!grammar) {
+      throw new AppError("Grammar lesson not found", 404);
+    }
+    sendSuccess(res, grammar);
+  });
+
   create = asyncHandler(async (req: Request, res: Response) => {
     const data = req.body;
     const created = await this.grammarService.create(data);
