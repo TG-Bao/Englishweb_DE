@@ -18,12 +18,12 @@ const seed = async () => {
   const users = db.getCollection<UserDocument>(USER_COLLECTION);
   const topics = db.getCollection<TopicDocument>(TOPIC_COLLECTION);
   const vocabs = db.getCollection<VocabularyDocument>(VOCABULARY_COLLECTION);
-  const grammars = db.getCollection<GrammarDocument>(GRAMMAR_COLLECTION);
   const quizzes = db.getCollection<QuizDocument>(QUIZ_COLLECTION);
   const questions = db.getCollection<QuestionDocument>(QUESTION_COLLECTION);
   const levels = db.getCollection<LevelDocument>(LEVEL_COLLECTION);
   const grammarExercises = db.getCollection<GrammarExerciseDocument>(GRAMMAR_EXERCISE_COLLECTION);
   const exerciseOptions = db.getCollection<ExerciseOptionDocument>(EXERCISE_OPTION_COLLECTION);
+  const grammars = db.getCollection<GrammarDocument>(GRAMMAR_COLLECTION);
 
   console.log("Cleaning old data...");
   await Promise.all([
