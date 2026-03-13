@@ -9,6 +9,7 @@ import questionRoutes from "./routes/questionRoutes";
 import progressRoutes from "./routes/progressRoutes";
 import userRoutes from "./routes/userRoutes";
 import levelRoutes from "./routes/levelRoutes";
+import grammarExerciseRoutes from "./routes/grammarExerciseRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 import { env } from "./config/env";
 
@@ -35,6 +36,7 @@ export const createApp = () => {
   app.use("/api/levels", levelRoutes);
 
   app.use("/api/grammar-topics", topicRoutes); 
+  app.use("/api/grammar-exercises", grammarExerciseRoutes);
   app.use(errorHandler);
 
   return app;
