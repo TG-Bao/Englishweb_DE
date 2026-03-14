@@ -10,6 +10,7 @@ import userRoutes from "./routes/userRoutes";
 import levelRoutes from "./routes/levelRoutes";
 import grammarExerciseRoutes from "./routes/grammarExerciseRoutes";
 import grammarRoutes from "./routes/grammarRoutes";
+import sentenceRoutes from "./routes/sentenceRoutes";
 import { errorHandler } from "./middleware/errorHandler";
 import { env } from "./config/env";
 
@@ -36,6 +37,7 @@ export const createApp = () => {
   app.use("/api/grammars", grammarRoutes); 
   app.use("/api/grammar-topics", topicRoutes); 
   app.use("/api/grammar-exercises", grammarExerciseRoutes);
+  app.use("/api/sentences", sentenceRoutes);
   app.use(errorHandler);
 
   return app;

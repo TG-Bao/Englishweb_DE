@@ -8,6 +8,7 @@ import { TopicDocument, TOPIC_COLLECTION } from "./models/Topic";
 import { QuestionDocument, QUESTION_COLLECTION } from "./models/Question";
 import { LevelDocument, LEVEL_COLLECTION } from "./models/Level";
 import { GrammarDocument, GRAMMAR_COLLECTION } from "./models/Grammar";
+import { SentenceDocument, SENTENCE_COLLECTION } from "./models/Sentence";
 import { GrammarExerciseDocument, GRAMMAR_EXERCISE_COLLECTION } from "./models/GrammarExercise";
 import { ExerciseOptionDocument, EXERCISE_OPTION_COLLECTION } from "./models/ExerciseOption";
 
@@ -24,6 +25,7 @@ const seed = async () => {
   const grammarExercises = db.getCollection<GrammarExerciseDocument>(GRAMMAR_EXERCISE_COLLECTION);
   const exerciseOptions = db.getCollection<ExerciseOptionDocument>(EXERCISE_OPTION_COLLECTION);
   const grammars = db.getCollection<GrammarDocument>(GRAMMAR_COLLECTION);
+  const sentences = db.getCollection<SentenceDocument>(SENTENCE_COLLECTION);
 
   console.log("Cleaning old data...");
   await Promise.all([
@@ -35,7 +37,8 @@ const seed = async () => {
     questions.deleteMany({}),
     levels.deleteMany({}),
     grammarExercises.deleteMany({}),
-    exerciseOptions.deleteMany({})
+    exerciseOptions.deleteMany({}),
+    sentences.deleteMany({})
   ]);
 
   // 1. Seed Admin User
@@ -260,9 +263,23 @@ const seed = async () => {
     { exerciseId: ex8.insertedId, content: "When", isCorrect: false, createdAt: new Date() }
   ] as ExerciseOptionDocument[]);
 
-  console.log("Mock First Conditional Grammar Exercises created");
+  // Seed Sentences
+  await sentences.insertMany([
+    {
+      text: "How are you today?",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      text: "I am learning English on this website.",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ]);
 
-  console.log("Seed finished successfully!");
+  console.log("Database seeded successfully!");
   process.exit(0);
 };
 
