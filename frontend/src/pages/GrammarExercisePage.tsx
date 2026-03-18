@@ -8,7 +8,8 @@ import { CheckCircle2, XCircle, Award, RotateCcw, ArrowRight } from "lucide-reac
 type GrammarExerciseType = "MCQ" | "FILL";
 
 type ExerciseOption = {
-  id: string;
+  _id: string;
+  id?: string;
   content: string;
 };
 
@@ -39,11 +40,11 @@ const GrammarExercisePage = () => {
         setLoading(true);
         // Load grammar details
         const grammarRes = await api.get(`/grammars/${id}`);
-        setGrammar(grammarRes.data);
+        setGrammar(grammarRes.data.data);
 
         // Load exercises for this grammar
         const exerciseRes = await api.get(`/grammar-exercises?grammarId=${id}`);
-        setExercises(exerciseRes.data);
+        setExercises(exerciseRes.data.data);
       } catch (err) {
         console.error("Failed to fetch data", err);
       } finally {
@@ -66,7 +67,7 @@ const GrammarExercisePage = () => {
       const submissionPromises = exercises.map(ex => 
         api.post("/grammar-exercises/submit", {
           exerciseId: ex._id,
-          answer: answers[ex._id]
+          selectedOptionId: answers[ex._id]
         })
       );
       
@@ -76,7 +77,7 @@ const GrammarExercisePage = () => {
       const evalData: Record<string, any> = {};
       
       responses.forEach((res, index) => {
-        const data = res.data;
+        const data = res.data.data;
         if (data.isCorrect) score++;
         evalData[exercises[index]._id] = data;
       });
@@ -134,7 +135,8 @@ const GrammarExercisePage = () => {
           {ex.type === "MCQ" && ex.options && (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               {ex.options.map((opt, oIdx) => {
-                let isSelected = userAnswer === opt.content;
+                const optId = opt._id || opt.id || String(oIdx);
+                let isSelected = userAnswer === optId;
                 let bg = isSelected ? 'var(--primary-light)' : 'var(--bg)';
                 let borderColor = isSelected ? 'var(--primary)' : 'var(--border)';
                 let color = isSelected ? 'var(--primary)' : 'var(--text)';
@@ -153,9 +155,9 @@ const GrammarExercisePage = () => {
 
                 return (
                   <button
-                    key={opt.id}
+                    key={optId}
                     disabled={!!result}
-                    onClick={() => handleAnswerChange(ex._id, opt.content)}
+                    onClick={() => handleAnswerChange(ex._id, optId)}
                     style={{
                       padding: '16px 20px',
                       borderRadius: '16px',
