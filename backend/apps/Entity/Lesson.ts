@@ -3,7 +3,8 @@ import { ObjectId } from "mongodb";
 export class Lesson {
   _id?: ObjectId;
   title!: string;
-  image!: string; // As requested
+  description?: string;
+  image!: string;
   level_id!: ObjectId; // A lesson should belong to a level
   order!: number;
   isPublished!: boolean;

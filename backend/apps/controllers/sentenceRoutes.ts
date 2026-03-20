@@ -14,7 +14,7 @@ router.get(
 
 // Admin routes (CRUD)
 router.get("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), sentenceController.list);
-router.get("/lesson/:lessonId", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), sentenceController.listByLesson);
+router.get("/lesson/:lessonId", AuthMiddleware.authenticate, sentenceController.listByLesson);
 router.post("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), sentenceController.create);
 router.patch("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), sentenceController.update);
 router.delete("/:id", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), sentenceController.remove);

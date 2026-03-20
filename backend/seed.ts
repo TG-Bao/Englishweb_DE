@@ -12,8 +12,8 @@ import { Grammar, GRAMMAR_COLLECTION } from "./apps/Entity/Grammar";
 import { GrammarExercise, GRAMMAR_EXERCISE_COLLECTION } from "./apps/Entity/GrammarExercise";
 import { ExerciseOption, EXERCISE_OPTION_COLLECTION } from "./apps/Entity/ExerciseOption";
 import { Progress, PROGRESS_COLLECTION } from "./apps/Entity/Progress";
-import { Sentence, SENTENCE_COLLECTION } from "./apps/Entity/Sentence";
 import { Lesson, LESSON_COLLECTION } from "./apps/Entity/Lesson";
+import { Sentence, SENTENCE_COLLECTION } from "./apps/Entity/Sentence";
 
 const seed = async () => {
   const client = DatabaseConnection.getMongoClient();
@@ -27,6 +27,7 @@ const seed = async () => {
     { name: QUIZ_COLLECTION, coll: db.collection<Quiz>(QUIZ_COLLECTION) },
     { name: QUESTION_COLLECTION, coll: db.collection<Question>(QUESTION_COLLECTION) },
     { name: LEVEL_COLLECTION, coll: db.collection<Level>(LEVEL_COLLECTION) },
+    { name: LESSON_COLLECTION, coll: db.collection<Lesson>(LESSON_COLLECTION) },
     { name: GRAMMAR_EXERCISE_COLLECTION, coll: db.collection<GrammarExercise>(GRAMMAR_EXERCISE_COLLECTION) },
     { name: EXERCISE_OPTION_COLLECTION, coll: db.collection<ExerciseOption>(EXERCISE_OPTION_COLLECTION) },
     { name: GRAMMAR_COLLECTION, coll: db.collection<Grammar>(GRAMMAR_COLLECTION) },
@@ -165,21 +166,7 @@ const seed = async () => {
   const tTechC1 = topicResults.insertedIds[8];
   console.log(`Created ${topicData.length} Topics`);
 
-  // 4.5. Seed Lessons
-  const lessonData: Omit<Lesson, '_id'>[] = [
-    { title: "Chào hỏi cơ bản", image: "https://i.imgur.com/CJjS4fC.png", level_id: a1LevelId, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { title: "Hỏi và trả lời thông tin cá nhân", image: "https://i.imgur.com/CJjS4fC.png", level_id: a1LevelId, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { title: "Các hoạt động hàng ngày", image: "https://i.imgur.com/CJjS4fC.png", level_id: a2LevelId, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { title: "Tại sân bay", image: "https://i.imgur.com/CJjS4fC.png", level_id: a2LevelId, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { title: "Nói về công việc", image: "https://i.imgur.com/CJjS4fC.png", level_id: b1LevelId, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-  ];
-  const lessonResults = await db.collection<Lesson>(LESSON_COLLECTION).insertMany(lessonData as any[]);
-  const lesson1Id = lessonResults.insertedIds[0];
-  const lesson2Id = lessonResults.insertedIds[1];
-  const lesson3Id = lessonResults.insertedIds[2];
-  const lesson4Id = lessonResults.insertedIds[3];
-  const lesson5Id = lessonResults.insertedIds[4];
-  console.log(`Created ${lessonData.length} Lessons`);
+  // Removed the redundant generic lessons (Chào hỏi cơ bản, Tại sân bay...)
 
   // 5. Seed Vocabulary
   const vocabData: Vocabulary[] = [
@@ -219,21 +206,122 @@ const seed = async () => {
   await db.collection<Vocabulary>(VOCABULARY_COLLECTION).insertMany(vocabData);
   console.log(`Created ${vocabData.length} Vocabulary Items`);
 
-  // 5.1. Seed Sentences for Speaking Practice
-  const sentenceSeedData = [
-    // Lesson 1 (A1)
-    { lesson_id: lesson1Id, text: "Hello, how are you?", type: "speaking", order: 1 },
-    { lesson_id: lesson1Id, text: "My name is John. What's your name?", type: "speaking", order: 2 },
-    { lesson_id: lesson1Id, text: "This is my mother. Her name is Mary.", type: "listening", order: 3 },
-    { lesson_id: lesson1Id, text: "I have one brother and two sisters.", type: "listening", order: 4 },
+  // 5.1. Seed Speaking Lessons (A1 - C2)
+  const levelA1 = levelData[0];
+  const levelA2 = levelData[1];
+  const levelB1 = levelData[2];
+  const levelB2 = levelData[3];
+  const levelC1 = levelData[4];
+  const levelC2 = levelData[5];
 
-    // Lesson 2 (A2)
-    { lesson_id: lesson2Id, text: "Where are you from?", type: "speaking", order: 1 },
-    { lesson_id: lesson2Id, text: "Could you please tell me how to get to the airport?", type: "speaking", order: 2 },
+  const speakingLessonData: Lesson[] = [
+    { title: "Lesson A1: Greeting Basics", description: "Học các cụm từ cơ bản và cách ứng xử tự nhiên khi gặp gỡ những người bạn mới trong môi trường quốc tế.", image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", level_id: levelA1._id!, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Lesson A2: Ordering at a Cafe", description: "Luyện tập kỹ năng nghe và nói thông qua các tình huống thực tế tại quán cà phê.", image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", level_id: levelA2._id!, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Lesson B1: Giving Presentations", description: "Nâng cao khả năng thuyết trình tự tin trước đám đông.", image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", level_id: levelB1._id!, order: 3, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Lesson B2: Job Interview Prep", description: "Từ vựng và phong thái chuyên nghiệp khi phỏng vấn.", image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", level_id: levelB2._id!, order: 4, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Lesson C1: Discussing Climate Change", description: "Thảo luận về các chủ đề học thuật và thời sự.", image: "https://images.unsplash.com/photo-1611273426858-450d8e3c9cce?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", level_id: levelC1._id!, order: 5, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Lesson C2: Philosophical Debates", description: "Tranh luận về các chủ đề triết học và trừu tượng.", image: "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", level_id: levelC2._id!, order: 6, isPublished: true, createdAt: new Date(), updatedAt: new Date() }
+  ];
+  
+  const speakingLessonResults = await db.collection<Lesson>(LESSON_COLLECTION).insertMany(speakingLessonData);
+  const spkId = speakingLessonResults.insertedIds;
+  console.log(`Created ${speakingLessonData.length} Speaking Lessons`);
+
+  // Generate exactly 20 unique meaningful sentences for each of the 6 topics
+  const createSentences = (lessonId: ObjectId, sentences: string[]) => {
+    return sentences.map((text, idx) => ({
+      lesson_id: lessonId,
+      text: text,
+      type: idx % 2 === 0 ? "speaking" : "listening",
+      order: idx + 1
+    }));
+  };
+
+  const sentenceSeedData = [
+    // A1: Greeting Basics
+    ...createSentences(spkId[0], [
+      "Hello, my name is Alex.", "What is your name?", "Nice to meet you.", "How are you today?", "I am very fine, thank you.",
+      "Where do you come from?", "I am from Vietnam.", "How old are you?", "I am twenty years old.", "This is my friend, Sarah.",
+      "She is a student.", "Nice to meet you too.", "See you later.", "Have a good day.", "Good morning everyone.",
+      "How is your family?", "They are doing well.", "Where do you live?", "I live in a big city.", "Goodbye, take care!"
+    ]),
     
-    // Lesson 3 (B1)
-    { lesson_id: lesson3Id, text: "I wake up early in the morning.", type: "speaking", order: 1 },
-    { lesson_id: lesson3Id, text: "My main responsibility is to develop new features.", type: "listening", order: 2 },
+    // A2: Ordering at a Cafe
+    ...createSentences(spkId[1], [
+      "Welcome to our coffee shop.", "What would you like to order?", "Could I have a large cappuccino, please?",
+      "Would you like anything to eat with that?", "Yes, I will take a chocolate muffin.", "Wait, do you have any croissants left?",
+      "I am sorry, we just sold out of croissants.", "That is okay, a muffin is fine.", "Is this order for here or to go?",
+      "I would like to have it here, please.", "Can I get a glass of tap water as well?", "Of course, I will bring it right away.",
+      "How much is the total?", "Your total comes to eight dollars and fifty cents.", "Here is a ten dollar bill.",
+      "Here is your change and your receipt.", "You can pick up your drink at the counter.", "Excuse me, where is the restroom?",
+      "It is down the hall and to the left.", "Thank you very much, enjoy your meal."
+    ]),
+    
+    // B1: Giving Presentations
+    ...createSentences(spkId[2], [
+      "Good morning everyone, thank you for coming today.", "Today, I am going to talk about our new marketing strategy.",
+      "My presentation is divided into three main parts.", "Let us begin with a brief overview of the current market.",
+      "As you can see on this slide, our sales have increased by ten percent.", "This growth is primarily due to our successful social media campaign.",
+      "Moving on to the second part of my presentation.", "I would like to highlight the main challenges we face right now.",
+      "Competition in the mobile sector is getting much fiercer.", "Therefore, we need to focus more on customer retention.",
+      "Let me give you a specific example of this approach.", "Suppose a customer uses our app on a daily basis.",
+      "We should offer them a loyalty discount to keep them engaged.", "This brings me to the end of my presentation.",
+      "To summarize, we must adapt to the changing market landscape.", "I believe that teamwork will be the key to our success.",
+      "Thank you for your time and attention today.", "Does anyone have any questions or comments?",
+      "That is a very interesting question, let me explain further.", "If there are no more questions, we will conclude here."
+    ]),
+    
+    // B2: Job Interview Prep
+    ...createSentences(spkId[3], [
+      "Thank you for applying to our company, please take a seat.", "Could you start by telling me a little bit about yourself?",
+      "I have five years of experience working as a software developer.", "I have led multiple projects from the initial phase to completion.",
+      "Why are you interested in this specific role?", "I admire your innovative products and your supportive company culture.",
+      "What do you consider to be your greatest professional strength?", "I am a highly proactive problem solver who works well under pressure.",
+      "Can you give an example of a time you overcame a difficult challenge?", "Once, our main server crashed right before a major product launch.",
+      "I coordinated with the DevOps team to restore the backup in under thirty minutes.", "What would you say is your biggest weakness?",
+      "I tend to focus too much on minor details, but I am learning to prioritize better.", "Where do you see yourself in our company five years from now?",
+      "I hope to eventually take on a leadership role and mentor junior developers.", "What are your salary expectations for this position?",
+      "Based on my experience and current market rates, I am looking for around sixty thousand dollars.", "Do you have any questions you would like to ask me?",
+      "Could you tell me more about the day-to-day responsibilities of this job?", "We will review your application and get back to you by next week."
+    ]),
+    
+    // C1: Discussing Climate Change
+    ...createSentences(spkId[4], [
+      "Climate change is undoubtedly one of the most pressing global crises of our time.", "The unprecedented rise in global temperatures is largely driven by anthropogenic greenhouse gas emissions.",
+      "If we do not act swiftly, the ecological consequences will be catastrophic and irreversible.", "Deforestation exacerbates the situation by severely reducing the Earth's carbon absorption capacity.",
+      "Transitioning from fossil fuels to renewable energy sources is an absolute necessity.", "Solar, wind, and geothermal energy provide viable alternatives to traditional carbon-intensive power plants.",
+      "However, upgrading our power grids to support intermittent energy sources presents a massive logistical challenge.", "Rising sea levels pose an existential threat to low-lying coastal cities and island nations.",
+      "We are already witnessing more frequent and severe extreme weather events, such as hurricanes and droughts.", "Biodiversity loss is accelerating at an alarming rate, disrupting complex ecological food webs.",
+      "The acidification of our oceans has a devastating impact on coral reefs and marine life.", "Governments worldwide must implement stricter environmental regulations and carbon pricing mechanisms.",
+      "Corporations must embrace sustainable practices rather than engaging in deceptive greenwashing tactics.", "Subsidies for the fossil fuel industry should be reallocated to fund green technology research.",
+      "Sustainable agricultural practices are essential to ensure long-term global food security.", "Individual lifestyle modifications, such as reducing meat consumption, can cumulatively make a difference.",
+      "Developing nations require financial assistance to leapfrog dirty industrialization phases.", "International treaties like the Paris Agreement are crucial, but they currently lack sufficient enforcement mechanisms.",
+      "Climate justice emphasizes that marginalized communities disproportionately suffer from environmental degradation.", "Investing heavily in climate resilience and mitigation strategies is the only path toward a sustainable future."
+    ]),
+    
+    // C2: Philosophical Debates
+    ...createSentences(spkId[5], [
+      "The perennial debate over free will versus determinism continues to captivate contemporary philosophers.",
+      "If the universe is entirely governed by causal laws, then human agency might merely be an intricate illusion.",
+      "Existentialism posits that existence precedes essence, implying we are condemned to forge our own meaning.",
+      "In an inherently absurd universe, Camus argues that one must imagine Sisyphus happy to embrace the struggle.",
+      "Utilitarian ethics asserts that the moral worth of an action is determined solely by its contribution to sheer utility.",
+      "Conversely, Kantian deontology insists on categorical imperatives that bind us to universalizable moral duties regardless of consequences.",
+      "Epistemologists rigorously investigate the fundamental nature, scope, and insurmountable limits of human knowledge.",
+      "Descartes sought foundational certainty by systematically doubting everything until arriving at his famous cogito ergo sum.",
+      "Is objective truth attainable, or are our perceptions inextricably filtered through subjective linguistic paradigms?",
+      "The Ship of Theseus paradox elegantly illustrates the profound complexities surrounding continuous personal identity.",
+      "If every single wooden plank of a ship is gradually replaced over time, does it remain the exact same entity?",
+      "The hard problem of consciousness questions how phenomenal subjective experience arises from complex neural networks.",
+      "Physicalism struggles to fully account for qualia—the deeply subjective feeling of experiencing the color red.",
+      "Nihilism rejects all religious and moral principles, maintaining that life is ultimately devoid of any intrinsic value.",
+      "Friedrich Nietzsche boldly proclaimed that God is dead, challenging humanity to create its own self-affirming values.",
+      "Stoicism advocates for the meticulous cultivation of self-control and fortitude to overcome destructive emotional turbulence.",
+      "By focusing strictly on what lies within our control, stoics argue we can achieve a state of profound tranquility.",
+      "The trolley problem serves as a visceral thought experiment to probe our deepest moral intuitions regarding sacrifice.",
+      "Does a purely mechanistic view of the universe inevitably strip human existence of its poetic and spiritual dimensions?",
+      "Ultimately, the ceaseless pursuit of philosophical inquiry may be more valuable than the definitive answers it seeks."
+    ])
   ];
 
   console.log("Generating audio Base64 for sentences...");
@@ -367,7 +455,9 @@ const seed = async () => {
   await db.collection<Question>(QUESTION_COLLECTION).insertMany(questionsData);
   console.log(`Created ${quizData.length} Quizzes with ${questionsData.length} Questions`);
 
-  // 8. Seed initial progress for Test User
+  // Removed: Seed speaking lessons (Moved above)
+
+  // 9. Seed initial progress for Test User
   await db.collection<Progress>(PROGRESS_COLLECTION).insertOne({
     userId: userId,
     topicProgress: [
@@ -389,7 +479,7 @@ const seed = async () => {
   console.log("🎉 MASSIVE SEED FINISHED SUCCESSFULLY!");
   console.log("- Total Levels      : ", levelData.length);
   console.log("- Total Topics      : ", topicData.length);
-  console.log("- Total Lessons     : ", lessonData.length);
+  console.log("- Total Lessons     : ", speakingLessonData.length);
   console.log("- Total Vocabs      : ", vocabData.length);
   console.log("- Total Grammar     : ", grammarData.length);
   console.log("- Total Exercises   : ", gExData.length);
