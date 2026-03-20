@@ -12,9 +12,12 @@
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "express": "^4.22.1",
+    "google-tts-api": "^2.0.2",
+    "gtts": "^0.2.1",
     "jsonwebtoken": "^9.0.2",
-    "mongodb": "^7.1.0"
+    "mongodb": "^7.1.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

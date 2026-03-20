@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import * as googleTTS from "google-tts-api";
 import { ObjectId } from "mongodb";
 import { DatabaseConnection } from "./apps/Database/Database";
 import { User, USER_COLLECTION } from "./apps/Entity/User";
@@ -11,6 +12,8 @@ import { Grammar, GRAMMAR_COLLECTION } from "./apps/Entity/Grammar";
 import { GrammarExercise, GRAMMAR_EXERCISE_COLLECTION } from "./apps/Entity/GrammarExercise";
 import { ExerciseOption, EXERCISE_OPTION_COLLECTION } from "./apps/Entity/ExerciseOption";
 import { Progress, PROGRESS_COLLECTION } from "./apps/Entity/Progress";
+import { Sentence, SENTENCE_COLLECTION } from "./apps/Entity/Sentence";
+import { Lesson, LESSON_COLLECTION } from "./apps/Entity/Lesson";
 
 const seed = async () => {
   const client = DatabaseConnection.getMongoClient();
@@ -27,7 +30,9 @@ const seed = async () => {
     { name: GRAMMAR_EXERCISE_COLLECTION, coll: db.collection<GrammarExercise>(GRAMMAR_EXERCISE_COLLECTION) },
     { name: EXERCISE_OPTION_COLLECTION, coll: db.collection<ExerciseOption>(EXERCISE_OPTION_COLLECTION) },
     { name: GRAMMAR_COLLECTION, coll: db.collection<Grammar>(GRAMMAR_COLLECTION) },
-    { name: PROGRESS_COLLECTION, coll: db.collection<Progress>(PROGRESS_COLLECTION) }
+    { name: PROGRESS_COLLECTION, coll: db.collection<Progress>(PROGRESS_COLLECTION) },
+    { name: SENTENCE_COLLECTION, coll: db.collection<Sentence>(SENTENCE_COLLECTION) },
+    { name: LESSON_COLLECTION, coll: db.collection<Lesson>(LESSON_COLLECTION) },
   ];
 
   console.log("Cleaning old data...");
@@ -44,6 +49,11 @@ const seed = async () => {
   ];
   await db.collection<Level>(LEVEL_COLLECTION).insertMany(levelData);
   console.log(`Created ${levelData.length} Levels`);
+
+  const levels = await db.collection<Level>(LEVEL_COLLECTION).find().toArray();
+  const a1LevelId = levels.find(l => l.name === 'A1')!._id!;
+  const a2LevelId = levels.find(l => l.name === 'A2')!._id!;
+  const b1LevelId = levels.find(l => l.name === 'B1')!._id!;
 
   // 2. Seed Users
   const password = await bcrypt.hash("Admin123", 10);
@@ -155,6 +165,22 @@ const seed = async () => {
   const tTechC1 = topicResults.insertedIds[8];
   console.log(`Created ${topicData.length} Topics`);
 
+  // 4.5. Seed Lessons
+  const lessonData: Omit<Lesson, '_id'>[] = [
+    { title: "Chào hỏi cơ bản", image: "https://i.imgur.com/CJjS4fC.png", level_id: a1LevelId, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Hỏi và trả lời thông tin cá nhân", image: "https://i.imgur.com/CJjS4fC.png", level_id: a1LevelId, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Các hoạt động hàng ngày", image: "https://i.imgur.com/CJjS4fC.png", level_id: a2LevelId, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Tại sân bay", image: "https://i.imgur.com/CJjS4fC.png", level_id: a2LevelId, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { title: "Nói về công việc", image: "https://i.imgur.com/CJjS4fC.png", level_id: b1LevelId, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+  ];
+  const lessonResults = await db.collection<Lesson>(LESSON_COLLECTION).insertMany(lessonData as any[]);
+  const lesson1Id = lessonResults.insertedIds[0];
+  const lesson2Id = lessonResults.insertedIds[1];
+  const lesson3Id = lessonResults.insertedIds[2];
+  const lesson4Id = lessonResults.insertedIds[3];
+  const lesson5Id = lessonResults.insertedIds[4];
+  console.log(`Created ${lessonData.length} Lessons`);
+
   // 5. Seed Vocabulary
   const vocabData: Vocabulary[] = [
     // Family A1
@@ -192,6 +218,54 @@ const seed = async () => {
   ];
   await db.collection<Vocabulary>(VOCABULARY_COLLECTION).insertMany(vocabData);
   console.log(`Created ${vocabData.length} Vocabulary Items`);
+
+  // 5.1. Seed Sentences for Speaking Practice
+  const sentenceSeedData = [
+    // Lesson 1 (A1)
+    { lesson_id: lesson1Id, text: "Hello, how are you?", type: "speaking", order: 1 },
+    { lesson_id: lesson1Id, text: "My name is John. What's your name?", type: "speaking", order: 2 },
+    { lesson_id: lesson1Id, text: "This is my mother. Her name is Mary.", type: "listening", order: 3 },
+    { lesson_id: lesson1Id, text: "I have one brother and two sisters.", type: "listening", order: 4 },
+
+    // Lesson 2 (A2)
+    { lesson_id: lesson2Id, text: "Where are you from?", type: "speaking", order: 1 },
+    { lesson_id: lesson2Id, text: "Could you please tell me how to get to the airport?", type: "speaking", order: 2 },
+    
+    // Lesson 3 (B1)
+    { lesson_id: lesson3Id, text: "I wake up early in the morning.", type: "speaking", order: 1 },
+    { lesson_id: lesson3Id, text: "My main responsibility is to develop new features.", type: "listening", order: 2 },
+  ];
+
+  console.log("Generating audio Base64 for sentences...");
+  const sentenceDataWithAudio: Sentence[] = [];
+  for (const s of sentenceSeedData) {
+    const base64Audio = await googleTTS.getAudioBase64(s.text, {
+      lang: "en",
+      slow: false,
+      host: "https://translate.google.com",
+      timeout: 10000,
+    });
+
+    sentenceDataWithAudio.push(
+      new Sentence({
+        lesson_id: s.lesson_id,
+        text: s.text,
+        order: s.order,
+        audio_url: `data:audio/mp3;base64,${base64Audio}`,
+        type: s.type as "speaking" | "listening"
+      })
+    );
+  }
+
+  if (sentenceDataWithAudio.length > 0) {
+    await db
+      .collection<Sentence>(SENTENCE_COLLECTION)
+      .insertMany(sentenceDataWithAudio as any[]);
+    console.log(
+      `Created ${sentenceDataWithAudio.length} Sentences with audio URLs`
+    );
+  }
+
 
   // 6. Seed Grammar Exercises
   const gExData: GrammarExercise[] = [
@@ -315,6 +389,7 @@ const seed = async () => {
   console.log("🎉 MASSIVE SEED FINISHED SUCCESSFULLY!");
   console.log("- Total Levels      : ", levelData.length);
   console.log("- Total Topics      : ", topicData.length);
+  console.log("- Total Lessons     : ", lessonData.length);
   console.log("- Total Vocabs      : ", vocabData.length);
   console.log("- Total Grammar     : ", grammarData.length);
   console.log("- Total Exercises   : ", gExData.length);

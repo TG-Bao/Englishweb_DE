@@ -5,15 +5,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Layout, BookOpen, Layers, HelpCircle, Plus, Edit2, Trash2,
   Save, Settings, Globe, LogOut, Moon, ChevronDown, ShieldCheck,
-  List, Search
+  List, Search, Mic, FileText, Volume2
 } from "lucide-react";
 import { clearAuth, getUser } from "../utils/auth";
 import { topicService } from "../services/TopicService";
 import { quizService } from "../services/QuizService";
 import { levelService, LevelItem } from "../services/LevelService";
 import { userService, UserItem } from "../services/UserService";
+import { lessonService, LessonItem } from "../services/LessonService";
+import { sentenceService, SentenceItem as SentenceItemType } from "../services/SentenceService";
+import { LessonSentenceManager } from "../components/admin/LessonSentenceManager";
 
-type Section = "topics" | "vocabulary" | "grammar" | "quizzes" | "questions" | "levels" | "users";
+type Section = "topics" | "vocabulary" | "grammar" | "quizzes" | "questions" | "levels" | "users" | "lessons" | "sentences";
 
 interface Topic { _id: string; title: string; order?: number; level?: string; }
 interface Quiz { _id: string; title: string; scopeType?: string; scopeId?: string; passScore?: number; }
@@ -85,19 +88,39 @@ const AdminDashboard = () => {
   const [editUserIsActive, setEditUserIsActive] = useState(true);
   const [editUserPoints, setEditUserPoints] = useState(0);
 
+  // Lesson states
+  const [lessons, setLessons] = useState<LessonItem[]>([]);
+  const [lessonTitle, setLessonTitle] = useState("");
+  const [lessonImage, setLessonImage] = useState("");
+  const [lessonLevelId, setLessonLevelId] = useState("");
+  const [lessonOrder, setLessonOrder] = useState(1);
+  const [lessonIsPublished, setLessonIsPublished] = useState(false);
+  const [editLessonId, setEditLessonId] = useState("");
+
+  // Sentence states
+  const [sentences, setSentences] = useState<SentenceItemType[]>([]);
+  const [sentenceLessonId, setSentenceLessonId] = useState("");
+  const [sentenceText, setSentenceText] = useState("");
+  const [sentenceType, setSentenceType] = useState<"speaking" | "listening">("speaking");
+  const [sentenceOrder, setSentenceOrder] = useState(1);
+  const [editSentenceId, setEditSentenceId] = useState("");
+  const [selectedSentenceAudio, setSelectedSentenceAudio] = useState<string>("");
+
   const loadAdminData = async () => {
     try {
       const [topicRes, quizRes, vocabRes, levelRes] = await Promise.all([
-        api.get("/grammar-topics/all"),
-        api.get("/quiz/all"),
-        api.get("/vocabulary"),
+        topicService.getAll(),
+        api.get("/quizzes/all"),
+        api.get("/vocabularies"),
         api.get("/levels/all")
       ]);
-      setTopics(topicRes.data.data || []);
+      setTopics(topicRes || []);
       setQuizzes(quizRes.data.data || []);
       setVocabularies(vocabRes.data.data || []);
       setLevelsData(levelRes.data.data || []);
-      if (topicRes.data.data?.length > 0 && !vocabTopicId) setVocabTopicId(topicRes.data.data[0]._id);
+      if (topicRes?.length > 0) {
+        if (!vocabTopicId) setVocabTopicId(topicRes[0]._id);
+      }
       if (quizRes.data.data?.length > 0 && !questionQuizId) setQuestionQuizId(quizRes.data.data[0]._id);
     } catch (err) {
       console.error("Failed to load admin data", err);
@@ -126,7 +149,7 @@ const AdminDashboard = () => {
   const loadGrammars = async (level: string) => {
     if (!level) return;
     try {
-      const res = await api.get(`/grammar/level/${level}`);
+      const res = await api.get(`/grammars/level/${level}`);
       setGrammars(res.data.data || []);
     } catch (err) {
       console.error("Failed to load grammars", err);
@@ -160,7 +183,25 @@ const AdminDashboard = () => {
     }
   };
 
-  useEffect(() => { loadAdminData(); loadUsers(); }, []);
+  const loadLessons = async () => {
+    try {
+      const data = await lessonService.getAll();
+      setLessons(data);
+    } catch (err) {
+      console.error("Load lessons failed", err);
+    }
+  };
+
+  const loadSentences = async () => {
+    try {
+      const data = await sentenceService.getAll();
+      setSentences(data);
+    } catch (err) {
+      console.error("Load sentences failed", err);
+    }
+  };
+
+  useEffect(() => { loadAdminData(); loadUsers(); loadLessons(); loadSentences(); }, []);
   useEffect(() => { if (grammarLevel) loadGrammars(grammarLevel); }, [grammarLevel]);
   useEffect(() => { if (questionQuizId) loadQuestions(questionQuizId); }, [questionQuizId]);
 
@@ -271,7 +312,7 @@ const AdminDashboard = () => {
         setQSourceType("CUSTOM");
         setQType("MCQ");
         setEditQuestionId("");
-      } else if (url.includes("grammar-topics") && method !== "DELETE") {
+      } else if (url.includes("topics") && method !== "DELETE") {
         setTopicTitle("");
         setEditTopicId("");
       }
@@ -284,6 +325,8 @@ const AdminDashboard = () => {
   const navItems = [
     { id: "topics", label: "Chủ Đề", icon: <Layout size={24} /> },
     { id: "levels", label: "Cấp Độ", icon: <Layers size={24} /> },
+    { id: "lessons", label: "Bài Học", icon: <FileText size={24} /> },
+    { id: "sentences", label: "Câu Văn", icon: <Volume2 size={24} /> },
     { id: "vocabulary", label: "Từ Vựng", icon: <BookOpen size={24} /> },
     { id: "grammar", label: "Ngữ Pháp", icon: <ChevronDown size={24} /> },
     { id: "quizzes", label: "Bài Kiểm Tra", icon: <List size={24} /> },
@@ -520,7 +563,7 @@ const AdminDashboard = () => {
                 </div>
                 {!editTopicId ? (
                   <button
-                    onClick={() => handleAction("POST", "/grammar-topics", { title: topicTitle, order: topicOrder, level: topicLevel, isPublished: true })}
+                    onClick={() => handleAction("POST", "/topics", { title: topicTitle, order: topicOrder, level: topicLevel, isPublished: true })}
                     style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
                   >
                     <Plus size={18} /> Thêm mới
@@ -528,7 +571,7 @@ const AdminDashboard = () => {
                 ) : (
                   <div style={{ display: "flex", gap: "12px" }}>
                     <button
-                      onClick={() => handleAction("PATCH", `/grammar-topics/${editTopicId}`, { title: topicTitle, order: topicOrder, level: topicLevel, isPublished: true })}
+                      onClick={() => handleAction("PATCH", `/topics/${editTopicId}`, { title: topicTitle, order: topicOrder, level: topicLevel, isPublished: true })}
                       style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 28px", background: "var(--primary)", color: "white", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}
                     >
                       <Save size={18} /> Lưu thay đổi
@@ -557,7 +600,7 @@ const AdminDashboard = () => {
                       </div>
                       <div style={{ display: "flex", gap: "4px" }}>
                         <button onClick={() => setEditTopicId(t._id)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#f1f5f9", cursor: "pointer", color: "#64748b" }}><Edit2 size={15} /></button>
-                        <button onClick={() => handleAction("DELETE", `/grammar-topics/${t._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
+                        <button onClick={() => handleAction("DELETE", `/topics/${t._id}`)} style={{ padding: "8px", borderRadius: "10px", border: "none", background: "#fef2f2", cursor: "pointer", color: "#ef4444" }}><Trash2 size={15} /></button>
                       </div>
                     </div>
                   ))}
@@ -1057,6 +1100,21 @@ const AdminDashboard = () => {
                 </div>
               </div>
             </motion.div>
+          )}
+          {/* ───── LESSONS & SENTENCES ───── */}
+          {(activeTab === "lessons" || activeTab === "sentences") && (
+            <LessonSentenceManager
+          key={activeTab}
+              activeTab={activeTab as "lessons" | "sentences"}
+              lessons={lessons}
+              sentences={sentences}
+              levels={levelsData}
+              onDataChange={() => { loadLessons(); loadSentences(); }}
+              showNotification={(msg, type) => {
+                setNotification({ message: msg, type });
+                setTimeout(() => setNotification({ message: "", type: null }), 3000);
+              }}
+            />
           )}
         </AnimatePresence>
       </main>

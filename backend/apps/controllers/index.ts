@@ -9,6 +9,8 @@ import quizRoutes from "./quizRoutes";
 import progressRoutes from "./progressRoutes";
 import levelRoutes from "./levelRoutes";
 import questionRoutes from "./questionRoutes";
+import sentenceRoutes from "./sentenceRoutes";
+import lessonRoutes from "./lessonRoutes";
 
 const router = Router();
 
@@ -22,6 +24,8 @@ router.use("/quizzes", quizRoutes);
 router.use("/progress", progressRoutes);
 router.use("/levels", levelRoutes);
 router.use("/questions", questionRoutes);
+router.use("/sentences", sentenceRoutes);
+router.use("/lessons", lessonRoutes);
 
 router.get("/", (req, res) => {
     res.json({ message: "Welcome to the API" });
