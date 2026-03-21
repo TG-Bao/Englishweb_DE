@@ -1,4 +1,10 @@
 import { AppError } from "../utils/AppError";
+import { ObjectId } from "mongodb";
+
+export const isValidObjectId = (id: string): boolean => {
+  if (!id) return false;
+  return ObjectId.isValid(id);
+};
 
 const isNil = (value: unknown) => value === undefined || value === null;
 

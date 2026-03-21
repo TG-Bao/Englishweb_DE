@@ -7,6 +7,7 @@ import GrammarPage from "./pages/GrammarPage";
 import GrammarDetailPage from "./pages/GrammarDetailPage";
 import ListeningPage from "./pages/ListeningPage";
 import SpeakingPage from "./pages/SpeakingPage";
+import ListeningPracticePage from "./pages/ListeningPracticePage";
 import ProfilePage from "./pages/ProfilePage";
 import LessonDetailPage from "./pages/LessonDetailPage";
 import QuizPage from "./pages/QuizPage";
@@ -67,6 +68,14 @@ const App = () => {
         element={
           <ProtectedRoute>
             <SpeakingPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/practice/:id"
+        element={
+          <ProtectedRoute>
+            <ListeningPracticePage />
           </ProtectedRoute>
         }
       />
