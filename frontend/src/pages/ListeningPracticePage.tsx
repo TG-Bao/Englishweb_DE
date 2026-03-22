@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import AppShell from "../components/AppShell";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, Pause, Languages, Lightbulb, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Languages, Lightbulb, RotateCcw, Mic, Square } from "lucide-react";
 
 type Lesson = {
   _id: string;
@@ -30,6 +30,12 @@ const ListeningPracticePage = () => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,6 +64,17 @@ const ListeningPracticePage = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+    }
+
+    // Reset recording state
+    if (recordedAudioUrl) {
+      URL.revokeObjectURL(recordedAudioUrl);
+      setRecordedAudioUrl(null);
+    }
+    if (isRecording && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
     }
   }, [currentIndex]);
 
@@ -103,6 +120,41 @@ const ListeningPracticePage = () => {
     const m = Math.floor(timeInSeconds / 60);
     const s = Math.floor(timeInSeconds % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const url = URL.createObjectURL(audioBlob);
+        setRecordedAudioUrl(url);
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      alert("Không thể truy cập microphone. Vui lòng kiểm tra quyền truy cập.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+    }
   };
 
   if (loading) {
@@ -237,6 +289,67 @@ const ListeningPracticePage = () => {
               </button>
             </div>
             
+            {/* User Recording Section */}
+            <div style={{
+              marginTop: '24px',
+              background: 'var(--white)',
+              borderRadius: '24px',
+              padding: '24px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.03)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text)' }}>
+                  Luyện phát âm của bạn
+                </h3>
+                {!recordedAudioUrl && !isRecording && (
+                  <button 
+                    onClick={startRecording}
+                    className="btn"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '99px', background: 'white', color: '#0f172a', fontWeight: '600', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                  >
+                    <Mic size={20} color="#0284c7" /> Bắt đầu ghi âm
+                  </button>
+                )}
+                {isRecording && (
+                  <button 
+                    onClick={stopRecording}
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '8px', 
+                      padding: '10px 20px', borderRadius: '99px',
+                      background: '#ef4444', color: 'white', border: 'none', cursor: 'pointer',
+                      fontWeight: '600',
+                      animation: 'pulse 2s infinite'
+                    }}
+                  >
+                    <Square size={20} fill="currentColor" /> Dừng ghi âm
+                  </button>
+                )}
+              </div>
+
+              {recordedAudioUrl && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '16px' }}>
+                  <audio controls src={recordedAudioUrl} style={{ flex: 1, height: '40px' }} />
+                  <button 
+                    onClick={() => {
+                      URL.revokeObjectURL(recordedAudioUrl);
+                      setRecordedAudioUrl(null);
+                      startRecording();
+                    }}
+                    style={{ 
+                      background: 'white', border: '1px solid #e2e8f0', color: '#0284c7', 
+                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                      fontWeight: '600', padding: '10px 16px', borderRadius: '99px',
+                    }}
+                  >
+                    <RotateCcw size={18} /> Ghi âm lại
+                  </button>
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Right Column - Context & Tips */}
