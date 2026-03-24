@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import AppShell from "../components/AppShell";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, Pause, Languages, Lightbulb, RotateCcw, Mic, Square } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, Pause, Languages, Lightbulb, RotateCcw, Mic, Square, Check } from "lucide-react";
 
 type Lesson = {
   _id: string;
@@ -34,19 +34,33 @@ const ListeningPracticePage = () => {
   // Recording state
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [browserTranscript, setBrowserTranscript] = useState(""); // NEW: Browser STT
+  const [allRecordings, setAllRecordings] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
+  const recognitionRef = useRef<any>(null); // NEW: Reference to Recognition
+
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [lessonRes, sentencesRes] = await Promise.all([
+        const userRaw = localStorage.getItem("el_user");
+        const user = userRaw ? JSON.parse(userRaw) : null;
+        const userId = user?.id || "";
+
+        const [lessonRes, sentencesRes, progressRes] = await Promise.all([
           api.get(`/lessons/${id}`),
-          api.get(`/sentences/lesson/${id}`)
+          api.get(`/sentences/lesson/${id}`),
+          userId ? api.get(`/speaking/progress/${userId}`) : Promise.resolve({ data: { data: [] } })
         ]);
+
         setLesson(lessonRes.data.data);
         setSentences(sentencesRes.data.data || []);
+        setAllRecordings(progressRes.data.data || []);
       } catch (err) {
         console.error("Failed to load practice data", err);
       } finally {
@@ -57,7 +71,7 @@ const ListeningPracticePage = () => {
   }, [id]);
 
   useEffect(() => {
-    // Reset audio state when sentence changes
+    // Reset audio player states
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
@@ -66,17 +80,35 @@ const ListeningPracticePage = () => {
       audioRef.current.currentTime = 0;
     }
 
-    // Reset recording state
-    if (recordedAudioUrl) {
-      URL.revokeObjectURL(recordedAudioUrl);
-      setRecordedAudioUrl(null);
-    }
+    setSubmitMessage(null);
+
     if (isRecording && mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
     }
   }, [currentIndex]);
+
+  useEffect(() => {
+    // Handle recording synchronization
+    const currentId = sentences[currentIndex]?._id;
+    const existing = allRecordings.find((r: any) => String(r.sentenceId) === String(currentId));
+
+    if (existing) {
+      const BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
+      const fullUrl = existing.audioUrl.startsWith('http') ? existing.audioUrl : `${BASE}${existing.audioUrl}`;
+      setRecordedAudioUrl(fullUrl);
+      setRecordedBlob(null);
+    } else {
+      // Only clear if no existing recording for the current sentence
+      if (recordedAudioUrl && !recordedAudioUrl.startsWith('http') && !recordedAudioUrl.startsWith('/static')) {
+        URL.revokeObjectURL(recordedAudioUrl);
+      }
+      setRecordedAudioUrl(null);
+      setRecordedBlob(null);
+    }
+  }, [currentIndex, allRecordings]);
+
 
   const currentSentence = sentences[currentIndex];
 
@@ -128,8 +160,30 @@ const ListeningPracticePage = () => {
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+      setBrowserTranscript(""); // Clear old transcript
+
+      // --- INITIALIZE BROWSER STT (FREE) ---
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          console.log("Browser STT Result:", transcript);
+          setBrowserTranscript(transcript);
+        };
+        
+        recognition.onerror = (e: any) => console.log("Recognition Error", e);
+        
+        recognition.start();
+        recognitionRef.current = recognition;
+      }
 
       mediaRecorder.ondataavailable = (event) => {
+
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
         }
@@ -139,6 +193,7 @@ const ListeningPracticePage = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const url = URL.createObjectURL(audioBlob);
         setRecordedAudioUrl(url);
+        setRecordedBlob(audioBlob);
       };
 
       mediaRecorder.start();
@@ -154,6 +209,54 @@ const ListeningPracticePage = () => {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
+      
+      // Stop browser recognition
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    }
+  };
+
+
+  const handleUpload = async () => {
+    if (!recordedBlob || !id) return;
+    
+    setIsSubmitting(true);
+    setSubmitMessage(null);
+    try {
+      const userRaw = localStorage.getItem("el_user");
+      const user = userRaw ? JSON.parse(userRaw) : null;
+      const userId = user?.id || "anonymous";
+
+      const formData = new FormData();
+      formData.append("audio", recordedBlob, "recording.webm");
+      formData.append("userId", userId);
+      formData.append("sentenceId", currentSentence._id);
+      formData.append("browserTranscript", browserTranscript); // NEW: Send browser-captured text
+
+
+      const res = await api.post("/speaking", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (res.data.success) {
+        setSubmitMessage({ type: 'success', text: "Đã gửi file ghi âm thành công!" });
+        // Update local state so it persists if navigating back
+        const newEntry = {
+          sentenceId: currentSentence._id,
+          audioUrl: res.data.data.fileUrl,
+          transcript: res.data.data.transcript,
+          accuracy: res.data.data.accuracy,
+          recordedAt: new Date()
+        };
+        setAllRecordings(prev => [newEntry, ...prev.filter(r => r.sentenceId !== currentSentence._id)]);
+      }
+
+    } catch (err: any) {
+      console.error("Upload failed", err);
+      setSubmitMessage({ type: 'error', text: err.response?.data?.message || "Lỗi khi gửi file ghi âm." });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -332,10 +435,39 @@ const ListeningPracticePage = () => {
               {recordedAudioUrl && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '16px' }}>
                   <audio controls src={recordedAudioUrl} style={{ flex: 1, height: '40px' }} />
+                  {recordedBlob ? (
+                    <button 
+                      onClick={handleUpload}
+                      disabled={isSubmitting}
+                      style={{ 
+                        background: '#0284c7', color: 'white', border: 'none',
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                        fontWeight: '700', padding: '10px 20px', borderRadius: '99px',
+                        opacity: isSubmitting ? 0.7 : 1
+                      }}
+                    >
+                      {isSubmitting ? "Đang gửi..." : "Gửi ghi âm"}
+                    </button>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <div style={{ 
+                        color: '#059669', background: '#d1fae5', padding: '10px 20px', 
+                        borderRadius: '99px', fontWeight: '700', display: 'flex', 
+                        alignItems: 'center', gap: '8px', fontSize: '14px' 
+                      }}>
+                        <Check size={18} strokeWidth={3} /> Đã gửi
+                      </div>
+                    </div>
+                  )}
+
                   <button 
                     onClick={() => {
                       URL.revokeObjectURL(recordedAudioUrl);
                       setRecordedAudioUrl(null);
+                      setRecordedBlob(null);
+                      setBrowserTranscript(""); // Clear transcript for new take
+                      setSubmitMessage(null);
+
                       startRecording();
                     }}
                     style={{ 
@@ -346,6 +478,57 @@ const ListeningPracticePage = () => {
                   >
                     <RotateCcw size={18} /> Ghi âm lại
                   </button>
+                </div>
+              )}
+
+              {/* Display score and transcript if available from allRecordings */}
+              {(() => {
+                const currentId = sentences[currentIndex]?._id;
+                const rec = allRecordings.find((r: any) => String(r.sentenceId) === String(currentId));
+                if (rec && (rec.accuracy !== undefined || rec.transcript)) {
+                  return (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{ 
+                        background: '#f1f5f9', padding: '16px 20px', borderRadius: '16px',
+                        display: 'flex', flexDirection: 'column', gap: '12px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#475569' }}>KẾT QUẢ PHÁT ÂM:</span>
+                        <div style={{ 
+                          fontSize: '24px', fontWeight: '900', 
+                          color: rec.accuracy >= 80 ? '#10b981' : rec.accuracy >= 50 ? '#f59e0b' : '#ef4444'
+                        }}>
+                          {rec.accuracy}%
+                        </div>
+                      </div>
+                      {rec.transcript && (
+                        <div style={{ fontSize: '15px', color: '#1e293b', fontStyle: 'italic', background: 'white', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                          " {rec.transcript} "
+                        </div>
+                      )}
+                      <div style={{ height: '6px', width: '100%', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{ 
+                          height: '100%', width: `${rec.accuracy}%`, 
+                          background: rec.accuracy >= 80 ? '#10b981' : rec.accuracy >= 50 ? '#f59e0b' : '#ef4444',
+                          transition: 'width 1s ease-out'
+                        }} />
+                      </div>
+                    </motion.div>
+                  );
+                }
+                return null;
+              })()}
+
+              {submitMessage && (
+
+                <div style={{ 
+                  color: submitMessage.type === 'success' ? '#10b981' : '#ef4444',
+                  fontSize: '14px', fontWeight: '600', textAlign: 'center'
+                }}>
+                  {submitMessage.text}
                 </div>
               )}
             </div>
