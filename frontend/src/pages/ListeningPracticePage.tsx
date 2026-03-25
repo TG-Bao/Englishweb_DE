@@ -4,6 +4,8 @@ import { api } from "../api/client";
 import AppShell from "../components/AppShell";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Pause, Languages, Lightbulb, RotateCcw, Mic, Square, Check } from "lucide-react";
+import { useRecorder } from "../hooks/useRecorder";
+import { SpeakingService } from "../api/SpeakingService";
 
 type Lesson = {
   _id: string;
@@ -31,17 +33,15 @@ const ListeningPracticePage = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
-  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
-  const [browserTranscript, setBrowserTranscript] = useState(""); // NEW: Browser STT
+  // Recording state from hook
+  const { 
+    isRecording, recordedAudioUrl, recordedBlob, browserTranscript, 
+    startRecording, stopRecording, resetRecording, setRecordedAudioUrl, setRecordedBlob, setBrowserTranscript 
+  } = useRecorder();
+
   const [allRecordings, setAllRecordings] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioChunksRef = useRef<BlobPart[]>([]);
-  const recognitionRef = useRef<any>(null); // NEW: Reference to Recognition
 
 
   useEffect(() => {
@@ -50,17 +50,31 @@ const ListeningPracticePage = () => {
       try {
         const userRaw = localStorage.getItem("el_user");
         const user = userRaw ? JSON.parse(userRaw) : null;
-        const userId = user?.id || "";
+        const userId = user?.id || user?._id || "";
 
         const [lessonRes, sentencesRes, progressRes] = await Promise.all([
           api.get(`/lessons/${id}`),
           api.get(`/sentences/lesson/${id}`),
-          userId ? api.get(`/speaking/progress/${userId}`) : Promise.resolve({ data: { data: [] } })
+          userId ? SpeakingService.getProgress(userId) : Promise.resolve({ data: [] })
         ]);
 
         setLesson(lessonRes.data.data);
-        setSentences(sentencesRes.data.data || []);
-        setAllRecordings(progressRes.data.data || []);
+        const fetchedSentences = sentencesRes.data.data || [];
+        setSentences(fetchedSentences);
+        const fetchedRecordings = progressRes.data || [];
+        setAllRecordings(fetchedRecordings);
+
+        // Auto-resume to last practiced sentence
+        if (fetchedRecordings.length > 0 && fetchedSentences.length > 0) {
+          const latest = [...fetchedRecordings].sort((a, b) => 
+            new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime()
+          )[0];
+          
+          const lastIndex = fetchedSentences.findIndex((s: any) => String(s._id) === String(latest.sentenceId));
+          if (lastIndex !== -1) {
+            setCurrentIndex(lastIndex);
+          }
+        }
       } catch (err) {
         console.error("Failed to load practice data", err);
       } finally {
@@ -81,33 +95,29 @@ const ListeningPracticePage = () => {
     }
 
     setSubmitMessage(null);
-
-    if (isRecording && mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-    }
+    resetRecording();
   }, [currentIndex]);
 
   useEffect(() => {
     // Handle recording synchronization
     const currentId = sentences[currentIndex]?._id;
-    const existing = allRecordings.find((r: any) => String(r.sentenceId) === String(currentId));
+    const existingAttempts = allRecordings
+      .filter((r: any) => String(r.sentenceId) === String(currentId))
+      .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
+
+    const existing = existingAttempts[0];
 
     if (existing) {
       const BASE = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000';
-      const fullUrl = existing.audioUrl.startsWith('http') ? existing.audioUrl : `${BASE}${existing.audioUrl}`;
+      const fullUrl = existing.audioUrl.startsWith('http') || existing.audioUrl.startsWith('data:') 
+        ? existing.audioUrl 
+        : `${BASE}${existing.audioUrl}`;
       setRecordedAudioUrl(fullUrl);
       setRecordedBlob(null);
     } else {
-      // Only clear if no existing recording for the current sentence
-      if (recordedAudioUrl && !recordedAudioUrl.startsWith('http') && !recordedAudioUrl.startsWith('/static')) {
-        URL.revokeObjectURL(recordedAudioUrl);
-      }
-      setRecordedAudioUrl(null);
-      setRecordedBlob(null);
+      resetRecording();
     }
-  }, [currentIndex, allRecordings]);
+  }, [currentIndex, allRecordings, sentences]);
 
 
   const currentSentence = sentences[currentIndex];
@@ -154,70 +164,6 @@ const ListeningPracticePage = () => {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-      setBrowserTranscript(""); // Clear old transcript
-
-      // --- INITIALIZE BROWSER STT (FREE) ---
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'en-US';
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          console.log("Browser STT Result:", transcript);
-          setBrowserTranscript(transcript);
-        };
-        
-        recognition.onerror = (e: any) => console.log("Recognition Error", e);
-        
-        recognition.start();
-        recognitionRef.current = recognition;
-      }
-
-      mediaRecorder.ondataavailable = (event) => {
-
-        if (event.data.size > 0) {
-          audioChunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const url = URL.createObjectURL(audioBlob);
-        setRecordedAudioUrl(url);
-        setRecordedBlob(audioBlob);
-      };
-
-      mediaRecorder.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.error("Error accessing microphone:", err);
-      alert("Không thể truy cập microphone. Vui lòng kiểm tra quyền truy cập.");
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-      
-      // Stop browser recognition
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    }
-  };
-
-
   const handleUpload = async () => {
     if (!recordedBlob || !id) return;
     
@@ -228,28 +174,31 @@ const ListeningPracticePage = () => {
       const user = userRaw ? JSON.parse(userRaw) : null;
       const userId = user?.id || "anonymous";
 
-      const formData = new FormData();
-      formData.append("audio", recordedBlob, "recording.webm");
-      formData.append("userId", userId);
-      formData.append("sentenceId", currentSentence._id);
-      formData.append("browserTranscript", browserTranscript); // NEW: Send browser-captured text
+      const data = await SpeakingService.submitRecording(
+        recordedBlob, 
+        userId, 
+        currentSentence._id, 
+        browserTranscript
+      );
 
-
-      const res = await api.post("/speaking", formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
-
-      if (res.data.success) {
+      if (data.success) {
         setSubmitMessage({ type: 'success', text: "Đã gửi file ghi âm thành công!" });
-        // Update local state so it persists if navigating back
+        
         const newEntry = {
           sentenceId: currentSentence._id,
-          audioUrl: res.data.data.fileUrl,
-          transcript: res.data.data.transcript,
-          accuracy: res.data.data.accuracy,
+          audioUrl: data.data.fileUrl,
+          expected: currentSentence.text,
+          transcript: data.data.transcript,
+          accuracy: data.data.score, 
           recordedAt: new Date()
         };
-        setAllRecordings(prev => [newEntry, ...prev.filter(r => r.sentenceId !== currentSentence._id)]);
+
+        setAllRecordings(prev => {
+          const others = prev.filter(r => String(r.sentenceId) !== String(currentSentence._id));
+          const currentAttempts = prev.filter(r => String(r.sentenceId) === String(currentSentence._id));
+          const updatedAttempts = [newEntry, ...currentAttempts].slice(0, 4);
+          return [...updatedAttempts, ...others];
+        });
       }
 
     } catch (err: any) {
@@ -342,7 +291,9 @@ const ListeningPracticePage = () => {
               {currentSentence.audio_url && (
                 <audio 
                   ref={audioRef} 
-                  src={currentSentence.audio_url} 
+                  src={currentSentence.audio_url.startsWith('http') || currentSentence.audio_url.startsWith('data:')
+                    ? currentSentence.audio_url 
+                    : `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000'}/${currentSentence.audio_url.replace(/^\//, '')}`} 
                   onTimeUpdate={handleTimeUpdate}
                   onLoadedMetadata={handleLoadedMetadata}
                   onEnded={handleEnded}
@@ -410,10 +361,20 @@ const ListeningPracticePage = () => {
                 {!recordedAudioUrl && !isRecording && (
                   <button 
                     onClick={startRecording}
+                    disabled={allRecordings.filter(r => String(r.sentenceId) === String(currentSentence._id)).length >= 4}
                     className="btn"
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '99px', background: 'white', color: '#0f172a', fontWeight: '600', border: '1px solid #e2e8f0', cursor: 'pointer' }}
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '8px', 
+                      padding: '10px 20px', borderRadius: '99px', 
+                      background: 'white', color: '#0f172a', fontWeight: '600', 
+                      border: '1px solid #e2e8f0', cursor: 'pointer',
+                      opacity: allRecordings.filter(r => String(r.sentenceId) === String(currentSentence._id)).length >= 4 ? 0.5 : 1
+                    }}
                   >
-                    <Mic size={20} color="#0284c7" /> Bắt đầu ghi âm
+                    <Mic size={20} color="#0284c7" /> 
+                    {allRecordings.filter(r => String(r.sentenceId) === String(currentSentence._id)).length >= 4 
+                      ? "Đã hết lượt (4/4)" 
+                      : "Bắt đầu ghi âm"}
                   </button>
                 )}
                 {isRecording && (
@@ -434,7 +395,19 @@ const ListeningPracticePage = () => {
 
               {recordedAudioUrl && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '16px' }}>
-                  <audio controls src={recordedAudioUrl} style={{ flex: 1, height: '40px' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                    <audio controls src={recordedAudioUrl} style={{ width: '100%', height: '40px' }} />
+                    {browserTranscript && !allRecordings.find(r => String(r.sentenceId) === String(currentSentence._id)) && (
+                      <div style={{ 
+                        fontSize: '13px', color: '#64748b', fontStyle: 'italic', 
+                        background: 'white', padding: '6px 12px', borderRadius: '8px', 
+                        border: '1px solid #e2e8f0', display: 'inline-block', width: 'fit-content'
+                      }}>
+                        <span style={{ fontWeight: '700', fontSize: '10px', color: '#94a3b8', marginRight: '6px' }}>NHẬN DIỆN TẠM THỜI:</span>
+                        "{browserTranscript}"
+                      </div>
+                    )}
+                  </div>
                   {recordedBlob ? (
                     <button 
                       onClick={handleUpload}
@@ -460,66 +433,161 @@ const ListeningPracticePage = () => {
                     </div>
                   )}
 
-                  <button 
-                    onClick={() => {
-                      URL.revokeObjectURL(recordedAudioUrl);
-                      setRecordedAudioUrl(null);
-                      setRecordedBlob(null);
-                      setBrowserTranscript(""); // Clear transcript for new take
-                      setSubmitMessage(null);
+                  {allRecordings.filter(r => String(r.sentenceId) === String(currentSentence._id)).length < 4 && (
+                    <button 
+                      onClick={() => {
+                        if (recordedAudioUrl) URL.revokeObjectURL(recordedAudioUrl);
+                        setRecordedAudioUrl(null);
+                        setRecordedBlob(null);
+                        setBrowserTranscript(""); // Clear transcript for new take
+                        setSubmitMessage(null);
 
-                      startRecording();
-                    }}
-                    style={{ 
-                      background: 'white', border: '1px solid #e2e8f0', color: '#0284c7', 
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
-                      fontWeight: '600', padding: '10px 16px', borderRadius: '99px',
-                    }}
-                  >
-                    <RotateCcw size={18} /> Ghi âm lại
-                  </button>
+                        startRecording();
+                      }}
+                      style={{ 
+                        background: 'white', border: '1px solid #e2e8f0', color: '#0284c7', 
+                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+                        fontWeight: '600', padding: '10px 16px', borderRadius: '99px',
+                      }}
+                    >
+                      <RotateCcw size={18} /> Ghi âm lại
+                    </button>
+                  )}
                 </div>
               )}
 
               {/* Display score and transcript if available from allRecordings */}
               {(() => {
                 const currentId = sentences[currentIndex]?._id;
-                const rec = allRecordings.find((r: any) => String(r.sentenceId) === String(currentId));
-                if (rec && (rec.accuracy !== undefined || rec.transcript)) {
+                const attempts = allRecordings
+                  .filter((r: any) => String(r.sentenceId) === String(currentId))
+                  .sort((a, b) => new Date(b.recordedAt).getTime() - new Date(a.recordedAt).getTime());
+
+                if (attempts.length === 0) return null;
+
+                const renderDetailedComparison = (expected: string, transcript: string) => {
+                  const numberMap: { [key: string]: string } = {
+                    "zero": "0", "one": "1", "two": "2", "three": "3", "four": "4", "five": "5", "six": "6", "seven": "7", "eight": "8", "nine": "9", "ten": "10",
+                    "eleven": "11", "twelve": "12", "thirteen": "13", "fourteen": "14", "fifteen": "15", "sixteen": "16", "seventeen": "17", "eighteen": "18", "nineteen": "19",
+                    "twenty": "20", "thirty": "30", "forty": "40", "fifty": "50", "sixty": "60", "seventy": "70", "eighty": "80", "ninety": "90", "hundred": "100"
+                  };
+
+                  const normalize = (s: string) => {
+                    let clean = s.toLowerCase().replace(/[.,!?;:]/g, "");
+                    return numberMap[clean] || clean;
+                  };
+
+                  const expectedWords = expected.split(/\s+/);
+                  const transcriptWords = transcript.split(/\s+/);
+                  
+                  const cleanExpected = expectedWords.map(normalize);
+                  const cleanTranscript = transcriptWords.map(normalize);
+
+                  // Simple alignment: for each expected word, check if it was spoken
+                  let lastMatchedIdx = -1;
+                  const targetAlignment = expectedWords.map((word, i) => {
+                    const cleanWord = cleanExpected[i];
+                    let foundIdx = -1;
+                    for (let j = lastMatchedIdx + 1; j < cleanTranscript.length; j++) {
+                      if (cleanTranscript[j] === cleanWord) {
+                        foundIdx = j;
+                        break;
+                      }
+                    }
+                    
+                    if (foundIdx !== -1) {
+                      lastMatchedIdx = foundIdx;
+                      return { word, status: 'correct' as const };
+                    } else {
+                      return { word, status: 'missing' as const };
+                    }
+                  });
+
+                  // Transcript alignment
+                  let expectedSet = new Set(cleanExpected);
+                  const transcriptAlignment = transcriptWords.map((word, i) => {
+                    return { word, status: expectedSet.has(cleanTranscript[i]) ? 'correct' : 'wrong' };
+                  });
+
                   return (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{ 
-                        background: '#f1f5f9', padding: '16px 20px', borderRadius: '16px',
-                        display: 'flex', flexDirection: 'column', gap: '12px'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#475569' }}>KẾT QUẢ PHÁT ÂM:</span>
-                        <div style={{ 
-                          fontSize: '24px', fontWeight: '900', 
-                          color: rec.accuracy >= 80 ? '#10b981' : rec.accuracy >= 50 ? '#f59e0b' : '#ef4444'
-                        }}>
-                          {rec.accuracy}%
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>Câu chuẩn (Xanh = Đạt, Đỏ = Thiếu):</div>
+                        <div style={{ fontSize: '18px', fontWeight: '700', lineHeight: 1.4, color: '#1e293b' }}>
+                          {targetAlignment.map((item, idx) => (
+                            <span key={idx} style={{ color: item.status === 'correct' ? '#059669' : '#ef4444', marginRight: '6px' }}>
+                              {item.word}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                      {rec.transcript && (
-                        <div style={{ fontSize: '15px', color: '#1e293b', fontStyle: 'italic', background: 'white', padding: '12px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                          " {rec.transcript} "
+                      
+                      <div style={{ background: 'white', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                        <div style={{ fontSize: '11px', fontWeight: '800', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase' }}>Bạn đã nói:</div>
+                        <div style={{ fontSize: '18px', fontWeight: '600', lineHeight: 1.4, fontStyle: 'italic', color: '#475569' }}>
+                          "{transcriptAlignment.map((item, idx) => (
+                            <span key={idx} style={{ color: item.status === 'correct' ? 'inherit' : '#ef4444', marginRight: '6px' }}>
+                              {item.word}
+                            </span>
+                          ))}"
                         </div>
-                      )}
-                      <div style={{ height: '6px', width: '100%', background: '#e2e8f0', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ 
-                          height: '100%', width: `${rec.accuracy}%`, 
-                          background: rec.accuracy >= 80 ? '#10b981' : rec.accuracy >= 50 ? '#f59e0b' : '#ef4444',
-                          transition: 'width 1s ease-out'
-                        }} />
                       </div>
-                    </motion.div>
+                    </div>
                   );
-                }
-                return null;
+                };
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '14px', fontWeight: '800', color: '#64748b', letterSpacing: '0.5px' }}>
+                        LỊCH SỬ LUYỆN TẬP ({attempts.length}/4)
+                      </span>
+                    </div>
+                    
+                    {attempts.map((rec, index) => (
+                      <motion.div 
+                        key={index}
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        style={{ 
+                          background: index === 0 ? '#f0f9ff' : 'white', 
+                          padding: '24px', borderRadius: '24px',
+                          border: index === 0 ? '2px solid #0284c7' : '1px solid #e2e8f0',
+                          display: 'flex', flexDirection: 'column', gap: '16px',
+                          boxShadow: index === 0 ? '0 10px 25px rgba(2,132,199,0.1)' : 'none'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <div style={{ 
+                              width: '40px', height: '40px', borderRadius: '50%', 
+                              background: rec.accuracy >= 80 ? '#dcfce7' : '#f1f5f9',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              {rec.accuracy >= 80 ? <Check size={20} color="#059669" /> : <Mic size={20} color="#64748b" />}
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '14px', fontWeight: '800', color: '#1e293b' }}>LẦN THỬ {attempts.length - index}</div>
+                                <div style={{ fontSize: '12px', color: '#64748b' }}>{new Date(rec.recordedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                                fontSize: '24px', fontWeight: '900', 
+                                color: rec.accuracy >= 80 ? '#059669' : rec.accuracy >= 50 ? '#d97706' : '#ef4444' 
+                            }}>
+                                {rec.accuracy}%
+                            </div>
+                            <div style={{ fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' }}>Độ chính xác</div>
+                          </div>
+                        </div>
+
+                        {rec.transcript && renderDetailedComparison(rec.expected || currentSentence.text, rec.transcript)}
+                      </motion.div>
+                    ))}
+                  </div>
+                );
               })()}
 
               {submitMessage && (

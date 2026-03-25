@@ -7,7 +7,8 @@ export const env = {
   mongoUri: process.env.MONGO_URI || "",
   jwtSecret: process.env.JWT_SECRET || "",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "1d",
-  corsOrigin: process.env.CORS_ORIGIN || "*"
+  corsOrigin: process.env.CORS_ORIGIN || "*",
+  openaiApiKey: process.env.OPENAI_API_KEY || ""
 };
 
 if (!env.mongoUri || !env.jwtSecret) {

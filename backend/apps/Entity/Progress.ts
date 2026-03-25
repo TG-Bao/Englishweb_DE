@@ -31,6 +31,9 @@ export class SpeakingProgress {
   sentenceId!: ObjectId;
   lessonId!: ObjectId;
   audioUrl!: string;
+  expected?: string;
+  transcript?: string;
+  accuracy?: number;
   isCompleted!: boolean;
   recordedAt!: Date;
 }

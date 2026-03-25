@@ -1,8 +1,20 @@
 import ffmpeg from "fluent-ffmpeg";
 import path from "path";
 import fs from "fs";
+import OpenAI from "openai";
+import { env } from "../../Config/env";
 
 export class STTService {
+  private openai: OpenAI | null = null;
+
+  constructor() {
+    if (env.openaiApiKey) {
+      this.openai = new OpenAI({
+        apiKey: env.openaiApiKey,
+      });
+    }
+  }
+
   /**
    * Converts audio to WAV format for STT
    * Note: Requires ffmpeg to be installed on the system
@@ -25,13 +37,26 @@ export class STTService {
   }
 
   /**
-   * MOCK STT implementation for now
-   * In production, you would use OpenAI Whisper or Google Speech-to-Text
+   * Real STT implementation using OpenAI Whisper
    */
   async speechToText(audioPath: string, expectedText: string): Promise<string> {
-    // REAL implementation would use OpenAI Whisper or Google Speech-to-Text.
-    // Since we are looking for a FREE option, we prefer Browser's Web Speech API from the frontend.
-    console.warn(`STT FALLBACK: Returning expected text because no API key is provided for ${audioPath}`);
-    return expectedText; 
+    if (!this.openai) {
+      console.warn(`STT ERROR: No OpenAI API key provided for ${audioPath}`);
+      return ""; // Return empty to indicate failure
+    }
+
+    try {
+      const response = await this.openai.audio.transcriptions.create({
+        file: fs.createReadStream(audioPath),
+        model: "whisper-1",
+        language: "en"
+      });
+
+      return response.text;
+    } catch (err: any) {
+      console.error("OpenAI Whisper Error:", err);
+      // Do not fallback to expected text!
+      return "";
+    }
   }
 }
