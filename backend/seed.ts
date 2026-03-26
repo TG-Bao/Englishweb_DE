@@ -470,6 +470,7 @@ const seed = async () => {
     quizResults: [
       { quizId: qFamilyId, score: 100, total: 100, percentage: 100, passed: true, takenAt: new Date() }
     ],
+    speakingProgress: [],
     createdAt: new Date(),
     updatedAt: new Date()
   } as Progress);

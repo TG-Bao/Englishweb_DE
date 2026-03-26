@@ -27,11 +27,23 @@ export class LevelProgress {
   completedAt?: Date;
 }
 
+export class SpeakingProgress {
+  sentenceId!: ObjectId;
+  lessonId!: ObjectId;
+  audioUrl!: string;
+  expected?: string;
+  transcript?: string;
+  accuracy?: number;
+  isCompleted!: boolean;
+  recordedAt!: Date;
+}
+
 export class Progress {
   _id?: ObjectId;
   userId!: ObjectId;
   topicProgress!: TopicProgress[];
   levelProgress!: LevelProgress[];
+  speakingProgress!: SpeakingProgress[];
   quizResults!: QuizResult[];
   createdAt?: Date;
   updatedAt?: Date;
