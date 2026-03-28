@@ -7,6 +7,9 @@ export interface UserStats {
     currentLevel: string;
     nextLevel?: string;
     xpProgressPercentage: number;
+    learningStreak: number;
+    badges: string[];
+    rank: number;
 }
 
 export interface IStatisticsService {

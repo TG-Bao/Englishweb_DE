@@ -25,7 +25,26 @@ export class ProgressService implements IProgressService {
   }
 
   async getByUser(userId: string) {
-    return this.progressRepo.getByUserId(userId);
+    const progress = await this.progressRepo.getByUserId(userId);
+    if (!progress || !progress.quizResults || progress.quizResults.length === 0) {
+      return progress;
+    }
+
+    // Join quiz titles using existing findById
+    const quizResultPromises = progress.quizResults.map(async (qr) => {
+      const quiz = await this.quizRepo.findById(qr.quizId.toString());
+      return {
+        ...qr,
+        quizTitle: quiz?.title || "Bài kiểm tra"
+      };
+    });
+
+    const quizResultsWithTitles = await Promise.all(quizResultPromises);
+
+    return {
+      ...progress,
+      quizResults: quizResultsWithTitles
+    };
   }
 
   private async ensureProgress(userId: string): Promise<Progress> {
@@ -69,7 +88,7 @@ export class ProgressService implements IProgressService {
     const updated = await this.progressRepo.upsert(userId, {
       topicProgress: progress.topicProgress
     });
-    
+
     // Evaluate status
     const vocab = await this.vocabRepo.list({ topicId });
     const quizzes = await this.quizRepo.listByScope("TOPIC", topicId);
