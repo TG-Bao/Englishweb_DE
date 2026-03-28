@@ -61,7 +61,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       ]
     },
     { label: "Quiz", path: "/quiz" },
+    { label: "Kiểm tra", path: "/tests" },
     { label: "Tiến độ", path: "/progress" },
+
   ];
 
   return (

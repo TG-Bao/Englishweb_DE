@@ -6,24 +6,48 @@ import { getUser, updateUser as updateStoredUser } from "../utils/auth";
 import { api } from "../api/client";
 
 const ProfilePage = () => {
-  const user = getUser();
+  const [currentUser, setCurrentUser] = useState(getUser());
   const [isEditing, setIsEditing] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "success" as "success" | "error" });
 
+  useEffect(() => {
+    const handleUpdate = () => {
+      const updatedUser = getUser();
+      setCurrentUser(updatedUser);
+      if (updatedUser) {
+        setFormData({
+          name: updatedUser.name || "",
+          phone: updatedUser.phone || "",
+          bio: updatedUser.bio || "",
+          address: updatedUser.address || "",
+          level: updatedUser.level || "A1",
+          gender: updatedUser.gender || "MALE",
+          targetLevel: updatedUser.targetLevel || "B1",
+          learningGoal: updatedUser.learningGoal || "",
+          avatarUrl: updatedUser.avatarUrl || "",
+        });
+      }
+    };
+    window.addEventListener("user-updated", handleUpdate);
+    return () => window.removeEventListener("user-updated", handleUpdate);
+  }, []);
+
+
   // Profile Form State
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    phone: user?.phone || "",
-    bio: user?.bio || "",
-    address: user?.address || "",
-    level: user?.level || "A1",
-    gender: user?.gender || "MALE",
-    targetLevel: user?.targetLevel || "B1",
-    learningGoal: user?.learningGoal || "",
-    avatarUrl: user?.avatarUrl || "",
+    name: currentUser?.name || "",
+    phone: currentUser?.phone || "",
+    bio: currentUser?.bio || "",
+    address: currentUser?.address || "",
+    level: currentUser?.level || "A1",
+    gender: currentUser?.gender || "MALE",
+    targetLevel: currentUser?.targetLevel || "B1",
+    learningGoal: currentUser?.learningGoal || "",
+    avatarUrl: currentUser?.avatarUrl || "",
   });
+
 
   // Password Form State
   const [oldPassword, setOldPassword] = useState("");
@@ -130,24 +154,24 @@ const ProfilePage = () => {
             >
               <div style={{
                 width: '120px', height: '120px', borderRadius: '50%',
-                background: user?.avatarUrl ? `url(${user.avatarUrl}) center/cover no-repeat` : 'linear-gradient(135deg, var(--primary), #6366f1)',
+                background: currentUser?.avatarUrl ? `url(${currentUser.avatarUrl}) center/cover no-repeat` : 'linear-gradient(135deg, var(--primary), #6366f1)',
                 color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 24px', fontSize: '48px', fontWeight: '800',
                 boxShadow: '0 12px 30px rgba(79, 70, 229, 0.3)',
                 overflow: 'hidden'
               }}>
-                {!user?.avatarUrl && (user?.name?.charAt(0).toUpperCase() || <User size={56} />)}
+                {!currentUser?.avatarUrl && (currentUser?.name?.charAt(0).toUpperCase() || <User size={56} />)}
               </div>
 
-              <h1 style={{ fontSize: '24px', marginBottom: '8px', color: '#1e293b', fontWeight: 800 }}>{user?.name}</h1>
-              <p style={{ color: '#64748b', fontSize: '15px', marginBottom: '24px' }}>{user?.email}</p>
+              <h1 style={{ fontSize: '24px', marginBottom: '8px', color: '#1e293b', fontWeight: 800 }}>{currentUser?.name}</h1>
+              <p style={{ color: '#64748b', fontSize: '15px', marginBottom: '24px' }}>{currentUser?.email}</p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ background: '#eef2ff', color: 'var(--primary)', padding: '10px', borderRadius: '12px', fontSize: '14px', fontWeight: 700 }}>
-                  Trình độ: {user?.level || "A1"}
+                  Trình độ: {currentUser?.level || "A1"}
                 </div>
                 <div style={{ background: '#f0fdf4', color: '#16a34a', padding: '10px', borderRadius: '12px', fontSize: '14px', fontWeight: 700 }}>
-                  {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Học viên'}
+                  {currentUser?.role === 'ADMIN' ? 'Quản trị viên' : 'Học viên'}
                 </div>
               </div>
             </motion.div>
@@ -159,14 +183,14 @@ const ProfilePage = () => {
                   <div style={{ background: '#fef3c7', color: '#d97706', borderRadius: '12px', padding: '12px' }}><Trophy size={24} /></div>
                   <div>
                     <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Điểm tích lũy</div>
-                    <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>{user?.points || 0}</div>
+                    <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>{currentUser?.points || 0}</div>
                   </div>
                 </motion.div>
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} style={statCardStyle}>
                   <div style={{ background: '#dcfce7', color: '#16a34a', borderRadius: '12px', padding: '12px' }}><BookOpen size={24} /></div>
                   <div>
                     <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Bài học đã xong</div>
-                    <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>{user?.totalLessons || 0}</div>
+                    <div style={{ fontSize: '24px', fontWeight: 800, color: '#1e293b' }}>{currentUser?.totalLessons || 0}</div>
                   </div>
                 </motion.div>
               </div>
@@ -182,11 +206,11 @@ const ProfilePage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: 600 }}>CẤP ĐỘ MỤC TIÊU</div>
-                    <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '18px' }}>{user?.targetLevel || "Chưa đặt"}</div>
+                    <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '18px' }}>{currentUser?.targetLevel || "Chưa đặt"}</div>
                   </div>
                   <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '16px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px', fontWeight: 600 }}>LÝ DO HỌC</div>
-                    <div style={{ fontWeight: 700, color: '#1e293b' }}>{user?.learningGoal || "Chưa cập nhật"}</div>
+                    <div style={{ fontWeight: 700, color: '#1e293b' }}>{currentUser?.learningGoal || "Chưa cập nhật"}</div>
                   </div>
                 </div>
               </motion.div>
@@ -293,14 +317,14 @@ const ProfilePage = () => {
                     <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}><Phone size={20} /></div>
                     <div>
                       <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Số điện thoại</div>
-                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{user?.phone || "Chưa cập nhật"}</div>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{currentUser?.phone || "Chưa cập nhật"}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}><Mail size={20} /></div>
                     <div>
                       <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Email liên hệ</div>
-                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{user?.email}</div>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{currentUser?.email}</div>
                     </div>
                   </div>
                 </div>
@@ -309,19 +333,20 @@ const ProfilePage = () => {
                     <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}><MapPin size={20} /></div>
                     <div>
                       <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Địa chỉ</div>
-                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{user?.address || "Chưa cập nhật"}</div>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{currentUser?.address || "Chưa cập nhật"}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                     <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '12px', color: 'var(--primary)' }}><Calendar size={20} /></div>
                     <div>
                       <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 500 }}>Ngày tham gia</div>
-                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{new Date(user?.createdAt || Date.now()).toLocaleDateString('vi-VN')}</div>
+                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{new Date(currentUser?.createdAt || Date.now()).toLocaleDateString('vi-VN')}</div>
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
 
             <div style={{ marginTop: '40px', paddingTop: '32px', borderTop: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between' }}>
               <button
