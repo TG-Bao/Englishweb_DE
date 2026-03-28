@@ -29,7 +29,7 @@ export class StatisticsService implements IStatisticsService {
     }
 
     const progress = await this.progressRepo.getByUserId(userId);
-    
+
     // 1. Tính số topic đã hoàn thành
     const completedTopicsCount = progress?.topicProgress.filter(tp => tp.status === "COMPLETED").length || 0;
 
@@ -39,22 +39,22 @@ export class StatisticsService implements IStatisticsService {
     // 3. Tính % hoàn thành level hiện tại
     const levels = await this.levelRepo.listPublished();
     const sortedLevels = [...levels].sort((a, b) => a.order - b.order);
-    
+
     const userPoints = user.points || 0;
     const currentLevelName = user.level || "A1";
-    
+
     const currentLevelIndex = sortedLevels.findIndex(l => l.name === currentLevelName);
-    const nextLevel = currentLevelIndex !== -1 && currentLevelIndex < sortedLevels.length - 1 
-      ? sortedLevels[currentLevelIndex + 1] 
+    const nextLevel = currentLevelIndex !== -1 && currentLevelIndex < sortedLevels.length - 1
+      ? sortedLevels[currentLevelIndex + 1]
       : null;
-    
+
     const currentLevelObj = currentLevelIndex !== -1 ? sortedLevels[currentLevelIndex] : sortedLevels[0];
-    
+
     let xpProgressPercentage = 0;
     if (nextLevel) {
       const minXP = currentLevelObj.minPoints || 0;
       const maxXP = nextLevel.minPoints || 0;
-      
+
       if (userPoints >= maxXP) {
         xpProgressPercentage = 100;
       } else if (userPoints <= minXP) {
@@ -63,7 +63,6 @@ export class StatisticsService implements IStatisticsService {
         xpProgressPercentage = Math.round(((userPoints - minXP) / (maxXP - minXP)) * 100);
       }
     } else {
-      // Đã đạt level cao nhất
       xpProgressPercentage = 100;
     }
 
