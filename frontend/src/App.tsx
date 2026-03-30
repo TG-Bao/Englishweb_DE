@@ -14,7 +14,10 @@ import QuizPage from "./pages/QuizPage";
 import ProgressPage from "./pages/ProgressPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import GrammarExercisePage from "./pages/GrammarExercisePage";
+import TestListPage from "./pages/TestListPage";
+import TakeTestPage from "./pages/TakeTestPage";
 import { ProtectedRoute } from "./router/ProtectedRoute";
+
 
 const App = () => {
   return (
@@ -111,6 +114,23 @@ const App = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/tests"
+        element={
+          <ProtectedRoute>
+            <TestListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/take-test/:id"
+        element={
+          <ProtectedRoute>
+            <TakeTestPage />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/admin"
         element={

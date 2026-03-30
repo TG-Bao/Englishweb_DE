@@ -7,8 +7,11 @@ export type AuthUser = {
   targetLevel?: string;
   learningGoal?: string;
   points?: number;
+  totalXP?: number;
   totalLessons?: number;
+  currentLevel?: string;
   avatarUrl?: string;
+
   phone?: string;
   bio?: string;
   dateOfBirth?: string | Date;
