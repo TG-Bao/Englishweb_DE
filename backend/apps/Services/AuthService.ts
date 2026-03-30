@@ -60,7 +60,10 @@ export class AuthService implements IAuthService {
   }
 
   async updateProfile(userId: string, data: any) {
-    const user = await this.userRepo.updateById(userId, data);
+    // Prevent updating level manually through profile update
+    const { level, currentLevel, points, totalXP, ...updateData } = data;
+    
+    const user = await this.userRepo.updateById(userId, updateData);
     if (!user) {
       throw new AppError("User not found", 404);
     }

@@ -44,8 +44,8 @@ export class ProgressController {
       throw new AppError("Unauthorized", 401);
     }
 
-    const { level, grammarId } = validateMarkGrammar(req.body);
-    const progress = await this.progressService.markGrammarLearned(req.user.id, level, grammarId);
+    const { level, grammarId, status } = validateMarkGrammar(req.body);
+    const progress = await this.progressService.markGrammarLearned(req.user.id, level, grammarId, status);
     sendSuccess(res, progress);
   });
 }

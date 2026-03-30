@@ -12,7 +12,9 @@ import questionRoutes from "./questionRoutes";
 import sentenceRoutes from "./sentenceRoutes";
 import lessonRoutes from "./lessonRoutes";
 import speakingRoutes from "./speakingRoutes";
-import statisticsRoutes from "./statisticsRoutes";
+import testRoutes from "./testRoutes";
+import statisticRoutes from "./statisticRoutes";
+
 
 const router = Router();
 
@@ -29,7 +31,9 @@ router.use("/questions", questionRoutes);
 router.use("/sentences", sentenceRoutes);
 router.use("/lessons", lessonRoutes);
 router.use("/speaking", speakingRoutes);
-router.use("/statistics", statisticsRoutes);
+router.use("/tests", testRoutes);
+router.use("/statistics", statisticRoutes);
+
 
 router.get("/", (req, res) => {
     res.json({ message: "Welcome to the API" });

@@ -105,10 +105,71 @@ export class ProgressService implements IProgressService {
     return updated;
   }
 
-  async markGrammarLearned(userId: string, level: string, grammarId: string) {
+  async toggleVocabularyLearned(userId: string, vocabId: string) {
+    const vocab = await this.vocabRepo.findById(vocabId);
+    if (!vocab) throw new Error("Vocabulary not found");
+    const topicId = vocab.topicId.toString();
+
+    const progress = await this.ensureTopicProgress(userId, topicId);
+    const tp = progress.topicProgress.find(p => p.topicId.toString() === topicId);
+    if (!tp) throw new Error("Failed to ensure topic progress");
+
+    const vId = new ObjectId(vocabId);
+    const index = tp.vocabLearned.findIndex((id: ObjectId) => id.toString() === vocabId);
+    let isLearned = false;
+
+    if (index === -1) {
+      tp.vocabLearned.push(vId);
+      isLearned = true;
+    } else {
+      tp.vocabLearned.splice(index, 1);
+      isLearned = false;
+    }
+
+    const updated = await this.progressRepo.upsert(userId, {
+      topicProgress: progress.topicProgress
+    });
+
+    if (isLearned) {
+      const vocabList = await this.vocabRepo.list({ topicId });
+      const quizzes = await this.quizRepo.listByScope("TOPIC", topicId);
+      const quiz = quizzes[0];
+      const vocabDone = vocabList.length === 0 || tp.vocabLearned.length >= vocabList.length;
+      const quizDone = !quiz || tp.quizPassed;
+
+      if (vocabDone && quizDone) {
+        tp.status = "COMPLETED" as any;
+        tp.completedAt = new Date();
+        await this.progressRepo.upsert(userId, { topicProgress: progress.topicProgress });
+      }
+    }
+
+    return { progress: updated, learned: isLearned };
+  }
+
+  async markGrammarLearned(userId: string, level: string, grammarId: string, status: string = "COMPLETED") {
     const progress = await this.ensureProgress(userId);
-    // Simpler logic for now
-    return progress;
+    
+    if (!progress.grammarProgress) {
+      progress.grammarProgress = [];
+    }
+    
+    const existing = progress.grammarProgress.find((p: any) => p.grammarId.toString() === grammarId);
+    
+    if (!existing) {
+      progress.grammarProgress.push({
+        grammarId: new ObjectId(grammarId),
+        status: status as any,
+        completedAt: status === "COMPLETED" ? new Date() : undefined
+      } as any);
+    } else {
+      existing.status = status as any;
+      if (status === "COMPLETED") {
+        existing.completedAt = new Date();
+      }
+    }
+    
+    return this.progressRepo.upsert(userId, { grammarProgress: progress.grammarProgress });
   }
 
   async recordQuizResult(userId: string, quizId: string, score: number, total: number, percentage: number, passed: boolean) {

@@ -15,11 +15,6 @@ export class VocabularyRepository implements IVocabularyRepository {
     if (filters.topic) query.topic = filters.topic;
     if (filters.level) query.level = filters.level;
     if (filters.search) query.word = { $regex: filters.search, $options: "i" };
-    if (filters.learned === "1") {
-      query.learned = 1;
-    } else if (filters.learned === "0") {
-      query.learned = { $ne: 1 };
-    }
 
     return this.collection.find(query, { session: this.session || undefined }).toArray();
   }

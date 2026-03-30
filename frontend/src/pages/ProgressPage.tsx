@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
+import { getUser } from "../utils/auth";
 import AppShell from "../components/AppShell";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -15,12 +16,17 @@ type Progress = {
 };
 
 type UserStats = {
+  user: {
+    name: string;
+    level: string;
+    totalXP: number;
+    avatarUrl?: string;
+  };
   completedTopicsCount: number;
   vocabLearnedCount: number;
+  testsTaken: number;
   currentPoints: number;
   currentLevel: string;
-  nextLevel?: string;
-  xpProgressPercentage: number;
   learningStreak: number;
   badges: string[];
   rank: number;
@@ -68,7 +74,7 @@ const CircularProgress = ({ percentage, size = 180 }: { percentage: number; size
         />
       </svg>
       <div style={{ position: 'absolute', textAlign: 'center' }}>
-        <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--primary)' }}>{percentage}%</div>
+        <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--primary)' }}>{Math.round(percentage)}%</div>
         <div style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Tiến độ</div>
       </div>
     </div>
@@ -109,43 +115,73 @@ const ProgressPage = () => {
     fetchData();
   }, []);
 
-  const statCards = [
-    {
-      label: "Chủ đề hoàn thành",
-      value: stats?.completedTopicsCount || 0,
-      icon: <CheckCircle2 size={24} />,
-      color: "pastel-box-green"
-    },
-    {
-      label: "Từ vựng đã học",
-      value: stats?.vocabLearnedCount || 0,
-      icon: <BookOpen size={24} />,
-      color: "pastel-box-primary"
-    },
-    {
-      label: "Điểm hiện tại",
-      value: stats?.currentPoints || 0,
-      icon: <Star size={24} />,
-      color: "pastel-box-yellow"
-    },
-    {
-      label: "Chuỗi học thực tế",
-      value: `${stats?.learningStreak || 0} Ngày`,
-      icon: <Flame size={24} />,
-      color: "pastel-box-pink"
-    }
-  ];
+  const getXPProgress = (xp: number) => {
+    const thresholds = [
+      { level: "A1", min: 0, next: 1000 },
+      { level: "A2", min: 1000, next: 3000 },
+      { level: "B1", min: 3000, next: 5000 },
+      { level: "B2", min: 5000, next: 7000 },
+      { level: "C1", min: 7000, next: 10000 },
+      { level: "C2", min: 10000, next: 25000 },
+    ];
+    
+    const current = thresholds.find(t => xp < t.next) || thresholds[thresholds.length - 1];
+    const progress = ((xp - (current.min)) / (current.next - current.min)) * 100;
+    return {
+      currentLevel: current.level,
+      nextLevel: thresholds[thresholds.indexOf(current) + 1]?.level || "MAX",
+      percentage: Math.min(Math.max(progress, 0), 100),
+      remaining: Math.max(current.next - xp, 0)
+    };
+  };
 
   if (loading) {
     return (
       <AppShell>
-        <div className="container" style={{ padding: '100px 0', textAlign: 'center' }}>
+        <div style={{ padding: '100px 0', textAlign: 'center' }}>
           <div className="loader" style={{ margin: '0 auto' }}></div>
           <p style={{ marginTop: '20px', color: 'var(--text-muted)' }}>Đang tải dữ liệu tiến độ...</p>
         </div>
       </AppShell>
     );
   }
+
+  if (!stats) {
+    return (
+        <AppShell>
+          <div style={{ padding: '100px 0', textAlign: 'center' }}>Không thể tải dữ liệu thống kê.</div>
+        </AppShell>
+      );
+  }
+
+  const xpProgress = getXPProgress(stats.currentPoints);
+  const statCards = [
+    {
+      label: "Chủ đề hoàn thành",
+      value: stats.completedTopicsCount,
+      icon: <CheckCircle2 size={24} />,
+      color: "pastel-box-green"
+    },
+    {
+      label: "Từ vựng đã học",
+      value: stats.vocabLearnedCount,
+      icon: <BookOpen size={24} />,
+      color: "pastel-box-primary"
+    },
+    {
+      label: "Điểm hiện tại",
+      value: stats.currentPoints,
+      icon: <Star size={24} />,
+      color: "pastel-box-yellow"
+    },
+    {
+      label: "Chuỗi học thực tế",
+      value: `${stats.learningStreak} Ngày`,
+      icon: <Flame size={24} />,
+      color: "pastel-box-pink"
+    }
+  ];
+
 
   return (
     <AppShell>
@@ -193,15 +229,15 @@ const ProgressPage = () => {
               <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px', marginBottom: '64px' }}>
                 {/* Level Progress Card */}
                 <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '40px', gridColumn: 'span 2', padding: '2.5rem' }}>
-                  <CircularProgress percentage={stats?.xpProgressPercentage || 0} />
+                  <CircularProgress percentage={xpProgress.percentage} />
                   <div style={{ flex: 1 }}>
                     <div className="featured-card-badge" style={{ marginBottom: '16px' }}>CẤP ĐỘ HIỆN TẠI</div>
                     <h2 style={{ fontSize: '48px', fontWeight: '900', color: 'var(--primary)', marginBottom: '8px' }}>
                       {stats?.currentLevel}
                     </h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '16px', maxWidth: '440px' }}>
-                      {stats?.nextLevel 
-                        ? `Kiếm thêm ${(stats.currentPoints % 1000)} XP để mở khóa cấp độ ${stats.nextLevel}`
+                      {xpProgress.nextLevel !== "MAX" 
+                        ? `Kiếm thêm ${xpProgress.remaining} XP để mở khóa cấp độ ${xpProgress.nextLevel}`
                         : "Bạn đã vượt qua mọi giới hạn! Tiếp tục duy trì phong độ nhé."}
                     </p>
                     <div className="flex gap-4">
