@@ -22,9 +22,12 @@ export class User {
     lastLoginAt?: Date;
     address?: string;
     points?: number;
+    totalXP?: number;
+    currentLevel?: EngLevel;
     totalTopicsLearned?: number;
     createdAt?: Date;
     updatedAt?: Date;
+
 
     constructor() {}
 }

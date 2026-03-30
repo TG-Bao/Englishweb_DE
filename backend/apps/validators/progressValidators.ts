@@ -11,6 +11,7 @@ export const validateMarkVocabulary = (payload: any): MarkVocabularyDto => {
 export const validateMarkGrammar = (payload: any): MarkGrammarDto => {
   return {
     level: requireString(payload?.level, "level"),
-    grammarId: requireString(payload?.grammarId, "grammarId")
+    grammarId: requireString(payload?.grammarId, "grammarId"),
+    status: payload?.status as any
   };
 };

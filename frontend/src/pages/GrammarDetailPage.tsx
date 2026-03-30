@@ -8,12 +8,14 @@ import { motion } from "framer-motion";
 import { ChevronLeft, GraduationCap, Info, PlayCircle, BookOpen, CheckCircle2, Sparkles } from "lucide-react";
 import AudioPlayer from 'react-h5-audio-player';
 import 'react-h5-audio-player/lib/styles.css';
+import { api } from "../api/client";
 
 const GrammarDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const user = getUser();
   const [grammar, setGrammar] = useState<GrammarLesson | null>(null);
+  const [progress, setProgress] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [marking, setMarking] = useState(false);
 
@@ -22,8 +24,12 @@ const GrammarDetailPage = () => {
       if (!id) return;
       try {
         setLoading(true);
-        const data = await GrammarService.getById(id);
-        setGrammar(data);
+        const [grammarData, progressRes] = await Promise.all([
+          GrammarService.getById(id),
+          user ? api.get("/progress/me") : Promise.resolve(null)
+        ]);
+        setGrammar(grammarData);
+        setProgress(progressRes?.data?.data || null);
       } catch (err) {
         console.error("Failed to load grammar lesson", err);
       } finally {
@@ -33,21 +39,23 @@ const GrammarDetailPage = () => {
     loadData();
   }, [id]);
 
-  const handleTakeQuiz = async () => {
-    if (!grammar || !user) {
-      if (grammar) navigate(`/grammar-exercise/${grammar._id}`);
-      return;
-    }
-    
+  const isCompleted = progress?.grammarProgress?.find((p: any) => p.grammarId === grammar?._id)?.status === "COMPLETED";
+
+  const handleMarkCompleted = async () => {
+    if (!grammar || !user) return;
     setMarking(true);
     try {
-      // Mark as learned before going to quiz
-      await ProgressService.markGrammarLearned(grammar.level, grammar._id);
+      await api.post("/progress/grammar/mark-learned", {
+        level: grammar.level,
+        grammarId: grammar._id,
+        status: "COMPLETED"
+      });
+      const pRes = await api.get("/progress/me");
+      setProgress(pRes.data.data);
     } catch (err) {
       console.error("Failed to mark grammar as learned", err);
     } finally {
       setMarking(false);
-      navigate(`/grammar-exercise/${grammar._id}`);
     }
   };
 
@@ -226,22 +234,41 @@ const GrammarDetailPage = () => {
           )}
 
           {/* Action Button */}
-          <div style={{ textAlign: 'center', marginTop: '64px', marginBottom: '80px' }}>
+          <div style={{ textAlign: 'center', marginTop: '64px', marginBottom: '80px', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            {user && (
+              <motion.button 
+                whileHover={!isCompleted && !marking ? { scale: 1.05 } : {}}
+                whileTap={!isCompleted && !marking ? { scale: 0.95 } : {}}
+                disabled={marking || isCompleted}
+                onClick={handleMarkCompleted}
+                className={`btn-soft-gradient`}
+                style={{ 
+                  fontSize: '18px', fontWeight: '700', padding: '16px 48px',
+                  border: 'none', cursor: (marking || isCompleted) ? 'not-allowed' : 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: '12px',
+                  opacity: (marking || isCompleted) ? 0.7 : 1,
+                  background: isCompleted ? 'linear-gradient(135deg, #10b981, #059669)' : undefined,
+                  boxShadow: isCompleted ? '0 10px 20px rgba(16, 185, 129, 0.3)' : undefined
+                }}
+              >
+                <CheckCircle2 size={28} />
+                {marking ? "Đang xử lý..." : isCompleted ? "Đã Hoàn Thành" : "Đánh Dấu Hoàn Thành"}
+              </motion.button>
+            )}
+            
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              disabled={marking}
-              onClick={handleTakeQuiz}
-              className="btn-soft-gradient"
+              onClick={() => navigate(`/grammar-exercise/${grammar._id}`)}
               style={{ 
                 fontSize: '18px', fontWeight: '700', padding: '16px 48px',
-                border: 'none', cursor: marking ? 'not-allowed' : 'pointer',
-                display: 'inline-flex', alignItems: 'center', gap: '12px',
-                opacity: marking ? 0.7 : 1
+                background: 'var(--white)', color: 'var(--primary)',
+                border: '2px solid var(--primary)', borderRadius: '100px',
+                cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '12px',
               }}
             >
               <PlayCircle size={28} />
-              {marking ? "Đang xử lý..." : "Đánh dấu đã học & Làm bài tập"}
+              {isCompleted ? "Học Lại (Làm Bài Tập)" : "Làm Bài Tập"}
             </motion.button>
           </div>
         </motion.div>

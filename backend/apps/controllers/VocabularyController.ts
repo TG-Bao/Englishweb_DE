@@ -5,6 +5,8 @@ import { AuthRequest } from "../middleware/authMiddleware";
 import { VocabularyService } from "../Services/VocabularyService";
 import { validateCreateVocabulary, validateUpdateVocabulary } from "../validators/vocabularyValidators";
 import { sendSuccess } from "../utils/response";
+import { ProgressService } from "../Services/ProgressService";
+import { AppError } from "../utils/AppError";
 
 export class VocabularyController {
   private vocabService: VocabularyService;
@@ -13,15 +15,40 @@ export class VocabularyController {
     this.vocabService = new VocabularyService();
   }
 
-  list = asyncHandler(async (req: Request, res: Response) => {
+  list = asyncHandler(async (req: AuthRequest, res: Response) => {
     const filters = {
       topicId: req.query.topicId as string,
       topic: req.query.topic as string,
       level: req.query.level as string,
-      search: req.query.search as string,
-      learned: req.query.learned as string
+      search: req.query.search as string
     };
-    const items = await this.vocabService.list(filters);
+    let items = await this.vocabService.list(filters);
+
+    let learnedSet = new Set<string>();
+    if (req.user) {
+      const progService = new ProgressService();
+      const progress = await progService.getByUser(req.user.id);
+      if (progress && progress.topicProgress) {
+        progress.topicProgress.forEach((tp: any) => {
+          if (tp.vocabLearned) {
+            tp.vocabLearned.forEach((id: ObjectId) => learnedSet.add(id.toString()));
+          }
+        });
+      }
+    }
+
+    items = items.map((item: any) => {
+       item.learned = learnedSet.has(item._id.toString());
+       return item;
+    });
+
+    const learnedFilter = req.query.learned as string;
+    if (learnedFilter === "1") {
+       items = items.filter((item: any) => item.learned === true);
+    } else if (learnedFilter === "0") {
+       items = items.filter((item: any) => item.learned === false);
+    }
+
     sendSuccess(res, items);
   });
 
@@ -47,10 +74,10 @@ export class VocabularyController {
   });
 
   toggleLearned = asyncHandler(async (req: AuthRequest, res: Response) => {
+    if (!req.user) throw new AppError("Unauthorized", 401);
     const { id } = req.params;
-    const vocab = await this.vocabService.findById(id);
-    const newVal = vocab?.learned === 1 ? 0 : 1;
-    const updated = await this.vocabService.update(id, { learned: newVal } as any);
-    sendSuccess(res, updated);
+    const progService = new ProgressService();
+    const result = await progService.toggleVocabularyLearned(req.user.id, id);
+    sendSuccess(res, { learned: result.learned });
   });
 }

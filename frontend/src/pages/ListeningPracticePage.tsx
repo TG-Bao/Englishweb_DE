@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
+import { getUser, updateUser } from "../utils/auth";
 import AppShell from "../components/AppShell";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Pause, Languages, Lightbulb, RotateCcw, Mic, Square, Check } from "lucide-react";
@@ -182,7 +183,18 @@ const ListeningPracticePage = () => {
       );
 
       if (data.success) {
-        setSubmitMessage({ type: 'success', text: "Đã gửi file ghi âm thành công!" });
+        let msg = "Đã gửi file ghi âm thành công!";
+        if (data.data.xpEarned > 0) {
+          msg = `Tuyệt vời! Bạn nhận được +${data.data.xpEarned} XP!`;
+          // Update user locally
+          const { updateUser } = await import("../utils/auth");
+          updateUser({
+            level: data.data.newLevel,
+            points: data.data.newTotalXP,
+            totalXP: data.data.newTotalXP,
+          });
+        }
+        setSubmitMessage({ type: 'success', text: msg });
         
         const newEntry = {
           sentenceId: currentSentence._id,
@@ -192,6 +204,7 @@ const ListeningPracticePage = () => {
           accuracy: data.data.score, 
           recordedAt: new Date()
         };
+
 
         setAllRecordings(prev => {
           const others = prev.filter(r => String(r.sentenceId) !== String(currentSentence._id));

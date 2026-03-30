@@ -42,12 +42,13 @@ const seed = async () => {
   // 1. Seed Levels (A1-C2)
   const levelData: Level[] = [
     { name: "A1", description: "Beginner - Cơ bản", minPoints: 0, order: 1, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { name: "A2", description: "Elementary - Sơ cấp", minPoints: 500, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { name: "B1", description: "Intermediate - Trung cấp", minPoints: 1500, order: 3, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { name: "B2", description: "Upper Intermediate - Trung cao cấp", minPoints: 3000, order: 4, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { name: "C1", description: "Advanced - Cao cấp", minPoints: 5000, order: 5, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
-    { name: "C2", description: "Proficient - Thành thạo", minPoints: 8000, order: 6, isPublished: true, createdAt: new Date(), updatedAt: new Date() }
+    { name: "A2", description: "Elementary - Sơ cấp", minPoints: 1000, order: 2, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { name: "B1", description: "Intermediate - Trung cấp", minPoints: 3000, order: 3, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { name: "B2", description: "Upper Intermediate - Trung cao cấp", minPoints: 5000, order: 4, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { name: "C1", description: "Advanced - Cao cấp", minPoints: 7000, order: 5, isPublished: true, createdAt: new Date(), updatedAt: new Date() },
+    { name: "C2", description: "Proficient - Thành thạo", minPoints: 10000, order: 6, isPublished: true, createdAt: new Date(), updatedAt: new Date() }
   ];
+
   await db.collection<Level>(LEVEL_COLLECTION).insertMany(levelData);
   console.log(`Created ${levelData.length} Levels`);
 
@@ -60,9 +61,9 @@ const seed = async () => {
   const password = await bcrypt.hash("Admin123", 10);
   const userPassword = await bcrypt.hash("User123", 10);
   
-  const adminId = new ObjectId();
-  const userId = new ObjectId();
-  const advancedUserId = new ObjectId();
+  const adminId = new ObjectId("65f2a1b1c2d3e4f5a6b7c8d9");
+  const userId = new ObjectId("65f2a1b1c2d3e4f5a6b7c8da");
+  const advancedUserId = new ObjectId("65f2a1b1c2d3e4f5a6b7c8db");
 
   await db.collection<User>(USER_COLLECTION).insertMany([
     {
