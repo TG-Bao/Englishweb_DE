@@ -31,6 +31,24 @@ export class AuthMiddleware {
     }
   };
 
+  static optionalAuth = (req: AuthRequest, _res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return next();
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    try {
+      const decoded = jwt.verify(token, env.jwtSecret) as JwtPayload;
+      req.user = { id: decoded.id, role: decoded.role };
+    } catch {
+      // Ignore errors for optional auth
+    }
+    return next();
+  };
+
   static authorize = (roles: Array<"USER" | "ADMIN">) => (req: AuthRequest, _res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return next(new AppError("Forbidden", 403));

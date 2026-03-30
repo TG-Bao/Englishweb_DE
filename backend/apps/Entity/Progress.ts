@@ -45,6 +45,8 @@ export class Progress {
   levelProgress!: LevelProgress[];
   speakingProgress!: SpeakingProgress[];
   quizResults!: QuizResult[];
+  grammarProgress?: any[];
+  checkInDates?: string[];
   createdAt?: Date;
   updatedAt?: Date;
 

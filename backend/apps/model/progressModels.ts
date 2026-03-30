@@ -7,6 +7,7 @@ export class MarkVocabularyDto {
 export class MarkGrammarDto {
   level!: string;
   grammarId!: string;
+  status?: string;
   constructor() {}
 }
 

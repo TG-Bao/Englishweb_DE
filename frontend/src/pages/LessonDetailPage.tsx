@@ -65,13 +65,13 @@ const LessonDetailPage = () => {
 
   const markVocab = async (vocabId: string) => {
     if (!id) return;
-    await api.post("/progress/vocabulary", { lessonId: id, vocabId });
+    await api.post("/progress/vocabulary/mark-learned", { topicId: id, vocabId });
     load(); // Refresh overview
   };
 
   const markGrammar = async (grammarId: string) => {
     if (!id) return;
-    await api.post("/progress/grammar", { lessonId: id, grammarId });
+    await api.post("/progress/grammar/mark-learned", { level: "A1", grammarId, status: "COMPLETED" });
     load(); // Refresh overview
   };
 

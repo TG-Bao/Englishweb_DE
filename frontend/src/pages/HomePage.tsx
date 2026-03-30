@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, BookOpen, Users, Zap, Globe, MessageSquare, 
-  Play, Sparkles, Trophy, Star, Clock, ChevronRight, Layout
+  Play, Sparkles, Trophy, Star, Clock, ChevronRight, Layout, Flame, Award
 } from "lucide-react";
 import AppShell from "../components/AppShell";
 import { getUser } from "../utils/auth";
@@ -13,7 +13,18 @@ const HomePage = () => {
   const navigate = useNavigate();
   const user = getUser();
   const [progress, setProgress] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
+  // Vocabulary rotation state
+  const suggestedVocabs = [
+    { word: "Astonishing", meaning: "Đáng ngạc nhiên", type: "adj", example: "Her performance was astonishing." },
+    { word: "Perseverance", meaning: "Sự kiên trì", type: "n", example: "His perseverance finally paid off." },
+    { word: "Meticulous", meaning: "Tỉ mỉ, cẩn thận", type: "adj", example: "He is very meticulous about his work." },
+    { word: "Ubiquitous", meaning: "Có mặt khắp nơi", type: "adj", example: "Smartphones have become ubiquitous." },
+    { word: "Enthusiastic", meaning: "Nhiệt tình", type: "adj", example: "She is enthusiastic about learning English." }
+  ];
+  const [currentVocabIdx, setCurrentVocabIdx] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -21,16 +32,58 @@ const HomePage = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentVocabIdx(prev => (prev + 1) % suggestedVocabs.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const loadProgress = async () => {
     setLoading(true);
     try {
-      const res = await api.get("/progress/my");
-      setProgress(res.data);
+      const [progRes, statsRes] = await Promise.all([
+        api.get("/progress/me"),
+        api.get("/statistics/me")
+      ]);
+      setProgress(progRes.data.data);
+      setStats(statsRes.data.data);
     } catch (err) {
-      console.error("Failed to load progress", err);
+      console.error("Failed to load data", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCheckIn = async () => {
+    try {
+      await api.post("/statistics/check-in");
+      await loadProgress();
+      alert("Điểm danh thành công! Đã tăng Streak 🔥. Cùng giữ vững phong độ nào!");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Hôm nay bạn đã điểm danh rồi!");
+    }
+  };
+
+  const getXPProgress = (xp: number) => {
+    const thresholds = [
+      { level: "A1", min: 0, next: 1000 },
+      { level: "A2", min: 1000, next: 3000 },
+      { level: "B1", min: 3000, next: 5000 },
+      { level: "B2", min: 5000, next: 7000 },
+      { level: "C1", min: 7000, next: 10000 },
+      { level: "C2", min: 10000, next: 25000 },
+    ];
+    
+    const current = thresholds.find(t => xp < t.next) || thresholds[thresholds.length - 1];
+    const progressPerc = ((xp - current.min) / (current.next - current.min)) * 100;
+    return {
+      currentLevel: current.level,
+      nextLevel: thresholds[thresholds.indexOf(current) + 1]?.level || "MAX",
+      percentage: Math.min(Math.max(progressPerc, 0), 100),
+      currentLevelMin: current.min,
+      currentLevelNext: current.next
+    };
   };
 
   const journeySteps = [
@@ -42,92 +95,184 @@ const HomePage = () => {
   ];
 
   if (user) {
-    const completedLessons = progress?.lessonProgress?.filter((lp: any) => lp.status === "COMPLETED")?.length || 0;
-    const totalVocab = progress?.lessonProgress?.reduce((acc: number, curr: any) => acc + (curr.vocabLearned?.length || 0), 0) || 0;
-    const avgScore = progress?.quizResults?.length > 0 
-      ? Math.round(progress.quizResults.reduce((acc: number, curr: any) => acc + curr.percentage, 0) / progress.quizResults.length) 
-      : 0;
+    const grammarLearned = stats?.grammarLearnedCount || 0;
+    const totalVocab = stats?.vocabLearnedCount || 0;
+    const speakingPracticeCount = stats?.speakingPracticeCount || 0;
+    
+    const xpProg = stats ? getXPProgress(stats.currentPoints) : null;
 
     return (
       <AppShell>
         <div className="container" style={{ padding: '40px 0' }}>
           {/* Welcome Dashboard Header */}
-          <header style={{ marginBottom: '40px', background: 'var(--white)', padding: '32px', borderRadius: '24px', boxShadow: 'var(--shadow-sm)' }}>
+          <header style={{ marginBottom: '40px', background: 'var(--white)', padding: '32px', borderRadius: '24px', boxShadow: 'var(--shadow-sm)', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'var(--primary)', opacity: 0.05, borderRadius: '50%', filter: 'blur(50px)' }}></div>
+            
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex items-center justify-between"
+              className="flex items-start justify-between flex-wrap gap-6"
             >
-              <div>
-                <h1 style={{ fontSize: '32px', fontWeight: '800', marginBottom: '8px' }}>
-                  Chào mừng trở lại, {user.name}! 🌟
-                </h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '16px' }}>
-                  Cùng hoàn thành mục tiêu học tập hôm nay nhé!
+              <div style={{ flex: 1, minWidth: '300px' }}>
+                <div className="flex items-center gap-4 mb-2">
+                  <h1 style={{ fontSize: '32px', fontWeight: '900', margin: 0 }}>
+                    Chào mừng trở lại, {user.name}! 🌟
+                  </h1>
+                  <span className="badge badge-primary">{stats?.currentLevel || user.level}</span>
+                </div>
+                <p style={{ color: 'var(--text-muted)', fontSize: '16px', marginBottom: '24px' }}>
+                  Hôm nay là một ngày tuyệt vời để nâng cao trình độ Tiếng Anh của bạn.
                 </p>
+                
+                {/* Check-in & Streak */}
+                <div className="flex items-center gap-4 flex-wrap">
+                   <button 
+                     onClick={handleCheckIn}
+                     className="btn"
+                     style={{ 
+                       background: 'linear-gradient(135deg, #FF9966, #FF5E62)', 
+                       color: 'white', border: 'none', borderRadius: '100px', 
+                       padding: '12px 24px', fontSize: '15px', fontWeight: '800',
+                       display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 8px 16px rgba(255, 94, 98, 0.3)'
+                     }}
+                   >
+                     <Flame size={20} />
+                     Điểm Danh Nhận Streak
+                   </button>
+                   <div className="flex items-center gap-2" style={{ background: 'var(--bg)', padding: '12px 20px', borderRadius: '100px', border: '1px solid var(--border)' }}>
+                     <Flame size={20} color="#FF9966" />
+                     <span style={{ fontWeight: '800', fontSize: '15px' }}>{stats?.learningStreak || 0} Ngày</span>
+                     <span style={{ color: 'var(--text-muted)', fontSize: '13px' }}>liên tục</span>
+                   </div>
+                </div>
               </div>
-              <div style={{ width: '80px', height: '80px', background: 'var(--primary-light)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Sparkles size={40} color="var(--primary)" />
-              </div>
+              
+              {/* Level Progress Bar Horizontal */}
+              {xpProg && (
+                <div style={{ flex: '0 0 350px', background: 'var(--bg)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border)' }}>
+                  <div className="flex justify-between items-center mb-4">
+                    <span style={{ fontWeight: '800', fontSize: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Award size={20} color="var(--primary)" /> Điểm kinh nghiệm
+                    </span>
+                    <span style={{ color: 'var(--primary)', fontWeight: '900', fontSize: '20px' }}>{stats.currentPoints.toLocaleString()} <span style={{ fontSize: '12px' }}>XP</span></span>
+                  </div>
+                  
+                  <div style={{ width: '100%', height: '12px', background: 'var(--border)', borderRadius: '100px', overflow: 'hidden', marginBottom: '12px' }}>
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${xpProg.percentage}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      style={{ height: '100%', background: 'linear-gradient(90deg, var(--primary), #8B5CF6)', borderRadius: '100px' }}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-between items-center" style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-muted)' }}>
+                    <span>{xpProg.currentLevel} ({xpProg.currentLevelMin})</span>
+                    <span>{xpProg.nextLevel} ({xpProg.currentLevelNext})</span>
+                  </div>
+                </div>
+              )}
             </motion.div>
           </header>
 
-          {/* Statistics Grid */}
-          <div className="flex gap-6 mb-10 flex-wrap">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="card" 
-              style={{ flex: '1 1 250px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderRadius: '24px' }}
-            >
-              <div className="pastel-icon-box pastel-box-primary">
-                <Trophy size={28} />
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Bài Học Xong</div>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text)' }}>{completedLessons}</div>
-              </div>
-            </motion.div>
+          <div className="flex gap-6 flex-col lg:flex-row mb-10">
+            {/* Statistics Grid */}
+            <div className="grid" style={{ flex: 2, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px' }}>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="card" 
+                style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px', borderRadius: '24px' }}
+              >
+                <div className="pastel-icon-box pastel-box-primary">
+                  <Trophy size={28} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Ngữ Pháp Đã Học</div>
+                  <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text)' }}>{grammarLearned}</div>
+                </div>
+              </motion.div>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="card" 
-              style={{ flex: '1 1 250px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderRadius: '24px' }}
-            >
-              <div className="pastel-icon-box pastel-box-green">
-                <BookOpen size={28} />
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Từ Vựng Mới</div>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text)' }}>{totalVocab}</div>
-              </div>
-            </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="card" 
+                style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px', borderRadius: '24px' }}
+              >
+                <div className="pastel-icon-box pastel-box-green">
+                  <BookOpen size={28} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Từ Vựng Đã Học</div>
+                  <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text)' }}>{totalVocab}</div>
+                </div>
+              </motion.div>
 
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="card" 
-              style={{ flex: '1 1 250px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', borderRadius: '24px' }}
-            >
-              <div className="pastel-icon-box pastel-box-yellow">
-                <Star size={28} />
-              </div>
-              <div>
-                <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Trung Bình</div>
-                <div style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text)' }}>{avgScore}%</div>
-              </div>
-            </motion.div>
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="card" 
+                style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '16px', borderRadius: '24px' }}
+              >
+                <div className="pastel-icon-box pastel-box-yellow">
+                  <MessageSquare size={28} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px' }}>Đã Luyện Nói</div>
+                  <div style={{ fontSize: '28px', fontWeight: '900', color: 'var(--text)' }}>{speakingPracticeCount} <span style={{fontSize: '14px', fontWeight: '600'}}>bài</span></div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Vocab Suggester Widget */}
+            <div style={{ flex: 1 }}>
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="card"
+                style={{ height: '100%', padding: '24px', position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg, #4F46E5, #7C3AED)', color: 'white', borderRadius: '24px' }}
+              >
+                 <div style={{ position: 'absolute', top: '-30px', right: '-30px', opacity: 0.2 }}>
+                   <Sparkles size={120} />
+                 </div>
+                 <div style={{ fontSize: '13px', fontWeight: '700', letterSpacing: '2px', textTransform: 'uppercase', opacity: 0.8, marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <BookOpen size={16} /> Gợi Ý Từ Vựng Hôm Nay
+                 </div>
+                 
+                 <AnimatePresence mode="wait">
+                   <motion.div
+                     key={currentVocabIdx}
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     exit={{ opacity: 0, y: -10 }}
+                     transition={{ duration: 0.4 }}
+                   >
+                     <h3 style={{ fontSize: '32px', fontWeight: '900', margin: 0, lineHeight: '1.2' }}>{suggestedVocabs[currentVocabIdx].word}</h3>
+                     <span style={{ display: 'inline-block', margin: '8px 0 16px', background: 'rgba(255,255,255,0.2)', padding: '4px 12px', borderRadius: '100px', fontSize: '13px', fontWeight: '600' }}>
+                       {suggestedVocabs[currentVocabIdx].type}
+                     </span>
+                     <p style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>{suggestedVocabs[currentVocabIdx].meaning}</p>
+                     <p style={{ fontSize: '14px', opacity: 0.9, fontStyle: 'italic' }}>"{suggestedVocabs[currentVocabIdx].example}"</p>
+                   </motion.div>
+                 </AnimatePresence>
+                 
+                 <div className="flex gap-2" style={{ position: 'absolute', bottom: '24px', left: '24px' }}>
+                   {suggestedVocabs.map((_, i) => (
+                     <div key={i} style={{ width: '8px', height: '8px', borderRadius: '50%', background: i === currentVocabIdx ? 'white' : 'rgba(255,255,255,0.3)', transition: 'background 0.3s' }} />
+                   ))}
+                 </div>
+              </motion.div>
+            </div>
           </div>
 
           <div className="flex gap-6 flex-col lg:flex-row">
             {/* Main Content Area */}
             <div style={{ flex: 2 }}>
               <div className="flex items-center justify-between mb-6">
-                 <h2 style={{ fontSize: '20px', fontWeight: '800' }}>Khóa học của bạn</h2>
+                 <h2 style={{ fontSize: '20px', fontWeight: '800' }}>Vào bài học ngay thôi!</h2>
                  <button onClick={() => navigate("/vocabulary")} className="btn btn-ghost" style={{ fontSize: '13px' }}>
                     Tất cả bài học <ArrowRight size={14} />
                  </button>
@@ -137,11 +282,11 @@ const HomePage = () => {
                 {/* Featured Soft Gradient Course Card */}
                 <div className="featured-course-card">
                   <div>
-                    <span className="featured-card-badge">GỢI Ý HÔM NAY</span>
-                    <h3 style={{ fontSize: '26px', marginBottom: '8px', fontWeight: '800' }}>Từ vựng chủ đề "Trường học"</h3>
-                    <p style={{ opacity: 0.8, fontSize: '15px', fontWeight: '500' }}>Hoàn thành bài tập trắc nghiệm để tiếp tục nào!</p>
+                    <span className="featured-card-badge">BÀI HỌC TIẾP THEO</span>
+                    <h3 style={{ fontSize: '26px', marginBottom: '8px', fontWeight: '800' }}>Giao tiếp hàng ngày</h3>
+                    <p style={{ opacity: 0.8, fontSize: '15px', fontWeight: '500' }}>Tham gia khoá luyện nói hội thoại siêu tốc cùng AI!</p>
                   </div>
-                  <button onClick={() => navigate("/vocabulary")} className="btn btn-soft-gradient" style={{ borderRadius: '100px', padding: '14px 28px', fontSize: '15px' }}>
+                  <button onClick={() => navigate("/speaking")} className="btn btn-soft-gradient" style={{ borderRadius: '100px', padding: '14px 28px', fontSize: '15px' }}>
                     Chiến ngay <ChevronRight size={18} />
                   </button>
                 </div>

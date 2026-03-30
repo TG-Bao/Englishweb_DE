@@ -12,8 +12,20 @@ export class StatisticController {
     return sendSuccess(res, stats);
   });
 
+  getMeStats = asyncHandler(async (req: any, res: Response) => {
+    const userId = req.user.id;
+    const stats = await statisticService.getUserStats(userId);
+    return sendSuccess(res, stats);
+  });
+
   getLeaderboard = asyncHandler(async (req: Request, res: Response) => {
     const leaderboard = await statisticService.getLeaderboard();
     return sendSuccess(res, leaderboard);
+  });
+
+  checkIn = asyncHandler(async (req: any, res: Response) => {
+    const userId = req.user.id;
+    const result = await statisticService.recordCheckIn(userId);
+    return sendSuccess(res, result);
   });
 }

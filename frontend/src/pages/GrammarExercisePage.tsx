@@ -85,6 +85,14 @@ const GrammarExercisePage = () => {
       const total = exercises.length;
       const percentage = Math.round((score / total) * 100);
 
+      if (percentage >= 50) {
+        api.post("/progress/grammar/mark-learned", {
+          level: grammar?.level || "A1",
+          grammarId: grammar?._id || id,
+          status: "COMPLETED"
+        }).catch(e => console.error("Could not auto-mark grammar", e));
+      }
+
       setEvaluations(evalData);
       setResult({
         score,
