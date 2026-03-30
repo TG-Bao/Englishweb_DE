@@ -60,7 +60,6 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         { label: "Luyện nói", path: "/speaking", icon: <Mic size={18} /> },
       ]
     },
-    { label: "Quiz", path: "/quiz" },
     { label: "Kiểm tra", path: "/tests" },
     { label: "Tiến độ", path: "/progress" },
 

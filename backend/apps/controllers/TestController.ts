@@ -21,18 +21,19 @@ export class TestController {
     const db = DatabaseConnection.getMongoClient().db();
     const tests = await db.collection(TEST_COLLECTION).find(filter).toArray();
     
-    // If userId provided, check passed status
+    // If userId provided, check status
     if (userId) {
       const results = await db.collection("test_results").find({
-        userId: new ObjectId(userId as string),
-        score: { $gte: 80 }
+        userId: new ObjectId(userId as string)
       }).toArray();
       
-      const passedTestIds = new Set(results.map(r => r.testId.toString()));
+      const passedTestIds = new Set(results.filter(r => r.score >= 80).map(r => r.testId.toString()));
+      const completedTestIds = new Set(results.map(r => r.testId.toString()));
       
       const enrichedTests = tests.map(t => ({
         ...t,
-        passed: passedTestIds.has(t._id.toString())
+        passed: passedTestIds.has(t._id.toString()),
+        completed: completedTestIds.has(t._id.toString())
       }));
       
       return sendSuccess(res, enrichedTests);

@@ -261,9 +261,9 @@ const ProfilePage = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Trình độ hiện tại</label>
-                    <select style={inputStyle} value={formData.level} onChange={e => setFormData({ ...formData, level: e.target.value as any })}>
-                      {["A1", "A2", "B1", "B2", "C1", "C2"].map(L => <option key={L} value={L}>{L}</option>)}
-                    </select>
+                    <div style={{ ...inputStyle, background: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed', fontWeight: '700' }}>
+                      {formData.level} (Tự động cập nhật qua XP)
+                    </div>
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#475569', fontSize: '14px' }}>Trình độ mục tiêu</label>
