@@ -52,11 +52,11 @@ export class StatisticService {
 
     // Calculate Rank
     const currentPoints = user.points || user.totalXP || 0;
-    const rank = await this.database.collection(USER_COLLECTION).countDocuments({ 
-        $or: [
-            { points: { $gt: currentPoints } },
-            { totalXP: { $gt: currentPoints } }
-        ]
+    const rank = await this.database.collection(USER_COLLECTION).countDocuments({
+      role: { $ne: "ADMIN" },
+      $expr: {
+        $gt: [{ $max: [{ $ifNull: ["$points", 0] }, { $ifNull: ["$totalXP", 0] }] }, currentPoints]
+      }
     }) + 1;
 
     // Determine Badges (simple logic)
@@ -142,20 +142,33 @@ export class StatisticService {
 
   async getLeaderboard() {
     const topUsers = await this.database.collection<User>(USER_COLLECTION)
-      .find({ role: { $ne: "ADMIN" } }, { 
-        projection: { name: 1, avatarUrl: 1, level: 1, currentLevel: 1, totalXP: 1, points: 1 },
-        limit: 10,
-        sort: { totalXP: -1, points: -1 }
-      })
+      .aggregate([
+        { $match: { role: { $ne: "ADMIN" } } },
+        {
+          $addFields: {
+            effectivePoints: { 
+              $max: [
+                { $ifNull: ["$points", 0] }, 
+                { $ifNull: ["$totalXP", 0] }
+              ]
+            }
+          }
+        },
+        { $sort: { effectivePoints: -1 } },
+        { $limit: 10 },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            avatarUrl: 1,
+            level: { $ifNull: ["$level", { $ifNull: ["$currentLevel", "A1"] }] },
+            points: "$effectivePoints"
+          }
+        }
+      ])
       .toArray();
 
-    return topUsers.map(u => ({
-      _id: u._id,
-      name: u.name,
-      avatarUrl: u.avatarUrl,
-      level: u.level || u.currentLevel || "A1",
-      points: u.totalXP || u.points || 0
-    }));
+    return topUsers;
   }
 
 }

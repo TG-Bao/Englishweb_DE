@@ -70,4 +70,68 @@ export class TestController {
     
     return sendSuccess(res, result, 201, "Test submitted successfully");
   });
+
+  /**
+   * POST /api/tests
+   */
+  createTest = asyncHandler(async (req: Request, res: Response) => {
+    const { title, description, level, questions, timeLimit } = req.body;
+    if (!title || !description || !level || !questions) {
+      throw new AppError("title, description, level, and questions are required", 400);
+    }
+
+    const test = {
+      title,
+      description,
+      level,
+      questions,
+      timeLimit: timeLimit || 20,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const db = DatabaseConnection.getMongoClient().db();
+    const result = await db.collection(TEST_COLLECTION).insertOne(test);
+
+    return sendSuccess(res, { _id: result.insertedId, ...test }, 201, "Tạo đề thi thành công");
+  });
+
+  /**
+   * PATCH /api/tests/:id
+   */
+  updateTest = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { title, description, level, questions, timeLimit } = req.body;
+
+    const updates: any = { updatedAt: new Date() };
+    if (title !== undefined) updates.title = title;
+    if (description !== undefined) updates.description = description;
+    if (level !== undefined) updates.level = level;
+    if (questions !== undefined) updates.questions = questions;
+    if (timeLimit !== undefined) updates.timeLimit = timeLimit;
+
+    const db = DatabaseConnection.getMongoClient().db();
+    const result = await db.collection(TEST_COLLECTION).updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updates }
+    );
+
+    if (result.matchedCount === 0) throw new AppError("Test not found", 404);
+
+    const updatedTest = await db.collection(TEST_COLLECTION).findOne({ _id: new ObjectId(id) });
+    return sendSuccess(res, updatedTest, 200, "Cập nhật đề thi thành công");
+  });
+
+  /**
+   * DELETE /api/tests/:id
+   */
+  deleteTest = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const db = DatabaseConnection.getMongoClient().db();
+    const result = await db.collection(TEST_COLLECTION).deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) throw new AppError("Test not found", 404);
+
+    return sendSuccess(res, null, 200, "Huỷ đề thi thành công");
+  });
 }

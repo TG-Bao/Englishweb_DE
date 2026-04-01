@@ -9,6 +9,34 @@ import {
   CheckCircle2, TrendingUp, LayoutGrid
 } from "lucide-react";
 
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler
+} from 'chart.js';
+import { Bar, Doughnut, Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement,
+  PointElement,
+  LineElement,
+  Filler
+);
+
 type Progress = {
   lessonProgress: Array<{ lessonId: string; status: string; bestScore: number }>;
   topicProgress: Array<{ topicId: string; completedLessons: number; totalLessons: number; status: string }>;
@@ -24,6 +52,8 @@ type UserStats = {
   };
   completedTopicsCount: number;
   vocabLearnedCount: number;
+  grammarLearnedCount: number;
+  speakingPracticeCount: number;
   testsTaken: number;
   currentPoints: number;
   currentLevel: string;
@@ -169,14 +199,14 @@ const ProgressPage = () => {
       color: "pastel-box-primary"
     },
     {
-      label: "Điểm hiện tại",
-      value: stats.currentPoints,
-      icon: <Star size={24} />,
+      label: "Ngữ pháp đã học",
+      value: stats.grammarLearnedCount,
+      icon: <Zap size={24} />,
       color: "pastel-box-yellow"
     },
     {
-      label: "Chuỗi học thực tế",
-      value: `${stats.learningStreak} Ngày`,
+      label: "Luyện nói chuyên sâu",
+      value: stats.speakingPracticeCount,
       icon: <Flame size={24} />,
       color: "pastel-box-pink"
     }
@@ -269,7 +299,7 @@ const ProgressPage = () => {
               </div>
 
               {/* Stats Grid */}
-              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '32px', marginBottom: '64px' }}>
+              <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '32px', marginBottom: '48px' }}>
                 {statCards.map((stat, i) => (
                   <motion.div
                     key={i}
@@ -288,6 +318,60 @@ const ProgressPage = () => {
                     </div>
                   </motion.div>
                 ))}
+              </div>
+
+              {/* Charts Section */}
+              <div className="grid" style={{ gridTemplateColumns: '1fr 2fr', gap: '32px', marginBottom: '64px' }}>
+                <div className="card" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '800' }}>Phân bổ học tập</h3>
+                  <div style={{ height: '300px', display: 'flex', justifyContent: 'center' }}>
+                    <Doughnut 
+                      data={{
+                        labels: ['Từ vựng', 'Ngữ pháp', 'Luyện nói'],
+                        datasets: [{
+                          data: [stats.vocabLearnedCount, stats.grammarLearnedCount, stats.speakingPracticeCount],
+                          backgroundColor: ['#5AC8FA', '#4CD964', '#FF2D55'],
+                          hoverOffset: 4,
+                          borderWidth: 0
+                        }]
+                      }}
+                      options={{
+                        maintainAspectRatio: false,
+                        plugins: {
+                          legend: { position: 'bottom' }
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="card" style={{ padding: '32px' }}>
+                  <h3 style={{ marginBottom: '24px', fontSize: '20px', fontWeight: '800' }}>Tiến độ theo kỹ năng</h3>
+                  <div style={{ height: '300px' }}>
+                    <Bar 
+                      data={{
+                        labels: ['Chủ đề', 'Từ vựng', 'Ngữ pháp', 'Luyện nói'],
+                        datasets: [{
+                          label: 'Số lượng đạt được',
+                          data: [stats.completedTopicsCount, stats.vocabLearnedCount, stats.grammarLearnedCount, stats.speakingPracticeCount],
+                          backgroundColor: 'rgba(90, 200, 250, 0.5)',
+                          borderColor: '#5AC8FA',
+                          borderWidth: 1,
+                          borderRadius: 8
+                        }]
+                      }}
+                      options={{
+                        maintainAspectRatio: false,
+                        scales: {
+                          y: { beginAtZero: true, grid: { display: false } },
+                          x: { grid: { display: false } }
+                        },
+                        plugins: {
+                          legend: { display: false }
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="flex gap-8 items-start flex-col lg:flex-row">

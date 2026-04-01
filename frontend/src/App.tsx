@@ -12,11 +12,22 @@ import ProfilePage from "./pages/ProfilePage";
 import LessonDetailPage from "./pages/LessonDetailPage";
 import QuizPage from "./pages/QuizPage";
 import ProgressPage from "./pages/ProgressPage";
-import AdminDashboard from "./pages/AdminDashboard";
 import GrammarExercisePage from "./pages/GrammarExercisePage";
 import TestListPage from "./pages/TestListPage";
 import TakeTestPage from "./pages/TakeTestPage";
 import { ProtectedRoute } from "./router/ProtectedRoute";
+import { Navigate } from "react-router-dom";
+
+// Admin imports
+import { AdminLayout } from "./components/admin/AdminLayout";
+import { AdminLevelsPage } from "./pages/admin/AdminLevelsPage";
+import { AdminTopicsPage } from "./pages/admin/AdminTopicsPage";
+import { AdminLessonsPage } from "./pages/admin/AdminLessonsPage";
+import { AdminVocabularyPage } from "./pages/admin/AdminVocabularyPage";
+import { AdminGrammarPage } from "./pages/admin/AdminGrammarPage";
+import { AdminSentencesPage } from "./pages/admin/AdminSentencesPage";
+import { AdminTestsPage } from "./pages/admin/AdminTestsPage";
+import { AdminUsersPage } from "./pages/admin/AdminUsersPage";
 
 
 const App = () => {
@@ -135,10 +146,20 @@ const App = () => {
         path="/admin"
         element={
           <ProtectedRoute requireAdmin>
-            <AdminDashboard />
+            <AdminLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<Navigate to="/admin/levels" replace />} />
+        <Route path="levels" element={<AdminLevelsPage />} />
+        <Route path="topics" element={<AdminTopicsPage />} />
+        <Route path="lessons" element={<AdminLessonsPage />} />
+        <Route path="sentences" element={<AdminSentencesPage />} />
+        <Route path="vocabulary" element={<AdminVocabularyPage />} />
+        <Route path="grammar" element={<AdminGrammarPage />} />
+        <Route path="tests" element={<AdminTestsPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+      </Route>
     </Routes>
   );
 };

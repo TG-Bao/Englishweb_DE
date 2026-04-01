@@ -4,7 +4,8 @@ export class UserExerciseResult {
   _id?: ObjectId;
   userId!: ObjectId;
   exerciseId!: ObjectId;
-  selectedOptionId!: ObjectId;
+  selectedOptionId?: ObjectId; // For MCQ
+  userAnswer?: string; // For FILL
   isCorrect!: boolean;
   createdAt?: Date;
 

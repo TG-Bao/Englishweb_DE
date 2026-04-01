@@ -23,4 +23,15 @@ export class GrammarExerciseRepository implements IGrammarExerciseRepository {
     const result = await this.collection.insertOne(data as GrammarExercise, { session: this.session || undefined });
     return { ...data, _id: result.insertedId } as GrammarExercise;
   }
+
+  async delete(id: string): Promise<boolean> {
+    if (!ObjectId.isValid(id)) return false;
+    const result = await this.collection.deleteOne({ _id: new ObjectId(id) }, { session: this.session || undefined });
+    return result.deletedCount > 0;
+  }
+
+  async deleteByGrammar(grammarId: string): Promise<void> {
+    if (!ObjectId.isValid(grammarId)) return;
+    await this.collection.deleteMany({ grammarId: new ObjectId(grammarId) }, { session: this.session || undefined });
+  }
 }
