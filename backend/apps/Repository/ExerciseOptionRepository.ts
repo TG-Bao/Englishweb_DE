@@ -18,4 +18,9 @@ export class ExerciseOptionRepository implements IExerciseOptionRepository {
     const result = await this.collection.insertOne(data as ExerciseOption, { session: this.session || undefined });
     return { ...data, _id: result.insertedId } as ExerciseOption;
   }
+
+  async deleteByExercise(exerciseId: string): Promise<void> {
+    if (!ObjectId.isValid(exerciseId)) return;
+    await this.collection.deleteMany({ exerciseId: new ObjectId(exerciseId) }, { session: this.session || undefined });
+  }
 }
