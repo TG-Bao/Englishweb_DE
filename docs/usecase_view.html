@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sơ đồ Use Case Gọn - DoneEnglish</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            min-width: 700px;
+        }
+        h2 { text-align: center; color: #0f172a; font-size: 1.25rem; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Sơ đồ Use Case Hệ thống DoneEnglish</h2>
+        <div class="mermaid">
+            graph LR
+                %% Actors
+                L["👤 Người học"]
+                A["🔑 Quản trị viên"]
+
+                subgraph " "
+                    direction TB
+                    C1(("Đăng ký / Đăng nhập"))
+                    C2(("Học từ vựng & Ngữ pháp"))
+                    C3(("Luyện nói với AI"))
+                    C4(("Làm bài kiểm tra"))
+                    C5(("Xem thống kê & Tiến độ"))
+                    C6(("Quản lý bài học"))
+                    C7(("Quản lý người dùng"))
+                    C8(("Xem báo cáo hệ thống"))
+                end
+
+                %% Connections
+                L --- C1
+                L --- C2
+                L --- C3
+                L --- C4
+                L --- C5
+
+                C1 --- A
+                C6 --- A
+                C7 --- A
+                C8 --- A
+
+                %% Minimal Styling
+                style L fill:#f0f9ff,stroke:#0369a1
+                style A fill:#fff7ed,stroke:#c2410c
+                style C1,C2,C3,C4,C5,C6,C7,C8 fill:#fff,stroke:#475569
+        </div>
+    </div>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'neutral',
+            flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+        });
+    </script>
+</body>
+</html>

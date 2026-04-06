@@ -1,19 +1,19 @@
 import { Router } from "express";
-import authRoutes from "./authRoutes";
-import userRoutes from "./userRoutes";
-import topicRoutes from "./topicRoutes";
-import vocabularyRoutes from "./vocabularyRoutes";
-import grammarRoutes from "./grammarRoutes";
-import grammarExerciseRoutes from "./grammarExerciseRoutes";
-import quizRoutes from "./quizRoutes";
-import progressRoutes from "./progressRoutes";
-import levelRoutes from "./levelRoutes";
-import questionRoutes from "./questionRoutes";
-import sentenceRoutes from "./sentenceRoutes";
-import lessonRoutes from "./lessonRoutes";
-import speakingRoutes from "./speakingRoutes";
-import testRoutes from "./testRoutes";
-import statisticRoutes from "./statisticRoutes";
+import authRoutes from "./Auth/authRoutes";
+import userRoutes from "./User/userRoutes";
+import topicRoutes from "./Topic/topicRoutes";
+import vocabularyRoutes from "./Vocabulary/vocabularyRoutes";
+import grammarRoutes from "./Grammar/grammarRoutes";
+import grammarExerciseRoutes from "./Grammar/grammarExerciseRoutes";
+import quizRoutes from "./Quiz/quizRoutes";
+import progressRoutes from "./Progress/progressRoutes";
+import levelRoutes from "./Level/levelRoutes";
+import questionRoutes from "./Question/questionRoutes";
+import sentenceRoutes from "./Sentence/sentenceRoutes";
+import lessonRoutes from "./Lesson/lessonRoutes";
+import speakingRoutes from "./Speaking/speakingRoutes";
+import testRoutes from "./Test/testRoutes";
+import statisticRoutes from "./Statistics/statisticRoutes";
 
 
 const router = Router();

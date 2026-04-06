@@ -8,6 +8,7 @@ import {
 import AppShell from "../components/AppShell";
 import { getUser } from "../utils/auth";
 import { api } from "../api/client";
+import Logo from "../components/Logo";
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -559,8 +560,8 @@ const HomePage = () => {
         <footer className="container" style={{ padding: '60px 0', borderTop: '1px solid var(--border)' }}>
           <div className="flex justify-between items-start flex-wrap gap-10">
             <div style={{ maxWidth: '280px' }}>
-              <div className="brand" style={{ marginBottom: '16px', fontSize: '1.25rem' }}>
-                <Globe size={28} /> EnglishHub
+              <div className="brand" style={{ marginBottom: '16px' }}>
+                <Logo size={46} showText={true} />
               </div>
               <p style={{ color: 'var(--text-muted)', lineHeight: '1.5', fontSize: '14px' }}>
                 Nền tảng học tiếng Anh hiện đại, kết hợp phương pháp game hóa và trí tuệ nhân tạo.
@@ -588,7 +589,7 @@ const HomePage = () => {
             </div>
           </div>
           <div style={{ marginTop: '60px', paddingTop: '30px', borderTop: '1px solid var(--border)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-            © 2026 ENGLISHHUB — MAKE ENGLISH FUN AGAIN. ALL RIGHTS RESERVED.
+            © 2026 DONEENGLISH — MAKE ENGLISH FUN AGAIN. ALL RIGHTS RESERVED.
           </div>
         </footer>
       </div>

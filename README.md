@@ -1,13 +1,13 @@
-# 🌐 EnglishHub — Nền tảng học tiếng Anh trực tuyến
+# 🌐 DoneEnglish — Nền tảng học tiếng Anh trực tuyến
 
-> **EnglishHub** là ứng dụng web học tiếng Anh toàn diện, được xây dựng theo kiến trúc **Full-stack Monorepo** gồm Backend Node.js/Express và Frontend React/TypeScript.
+> **DoneEnglish** là ứng dụng web học tiếng Anh toàn diện, được xây dựng theo kiến trúc **Full-stack Monorepo** gồm Backend Node.js/Express và Frontend React/TypeScript.
 
 ---
 
 ## 📁 Cấu trúc dự án
 
 ```
-Englishweb_DE/
+DoneEnglish/
 ├── backend/                    # Node.js + Express + TypeScript
 │   └── src/
 │       ├── app.ts              # Khởi tạo Express app
