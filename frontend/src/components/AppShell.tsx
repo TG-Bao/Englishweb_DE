@@ -1,4 +1,5 @@
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import Logo from "./Logo";
 import { clearAuth, getUser } from "../utils/auth";
 import { Globe, LogOut, User as UserIcon, BookOpen, Mic, ChevronDown, Settings, ShieldCheck, Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -71,11 +72,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         <header className="navbar">
           <div className="container" style={{ display: 'flex', width: '100%', alignItems: 'center' }}>
             <div className="brand" onClick={() => navigate("/")} style={{ cursor: 'pointer', flex: 1 }}>
-              <Globe size={28} />
-              <span style={{ 
-                letterSpacing: '-0.025em',
-                fontWeight: 900
-              }}>EnglishHub</span>
+              <Logo size={48} showText={true} textColor="var(--text)" />
             </div>
             
             <nav className="nav-links" style={{ display: 'flex', justifyContent: 'center' }}>

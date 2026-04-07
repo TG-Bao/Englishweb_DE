@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { getToken, getUser } from "../utils/auth";
+import { getToken, getUser, isAdminToken } from "../utils/auth";
 
 type Props = {
   children: React.ReactNode;
@@ -14,7 +14,9 @@ export const ProtectedRoute = ({ children, requireAdmin }: Props) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (requireAdmin && user.role !== "ADMIN") {
+  // SỬA LỖI BẢO MẬT: Kiểm tra quyền Admin dựa trên Token đã ký thay vì localStorage
+  if (requireAdmin && !isAdminToken()) {
+    console.warn("Cố gắng truy cập trái phép vào trang Admin!");
     return <Navigate to="/vocabulary" replace />;
   }
 

@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { clearAuth, getUser } from "../../utils/auth";
 import { AnimatePresence, motion } from "framer-motion";
+import Logo from "../Logo";
 
 export const AdminLayout = () => {
   const navigate = useNavigate();
@@ -72,16 +73,10 @@ export const AdminLayout = () => {
         
         {/* Logo */}
         <div
-          style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", padding: "28px 24px 20px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+          style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", padding: "24px 20px 20px" }}
           onClick={() => navigate("/")}
         >
-          <div style={{ background: "linear-gradient(135deg, #6c63ff, #5ac8fa)", borderRadius: "12px", padding: "10px", display: "flex", boxShadow: "0 8px 20px rgba(108,99,255,0.4)" }}>
-            <Globe size={18} color="white" />
-          </div>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: "16px", color: "white", letterSpacing: "-0.3px" }}>EnglishHub</div>
-            <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>Admin Studio</div>
-          </div>
+          <Logo size={42} showText={true} textColor="white" />
         </div>
 
         {/* Nav Groups */}

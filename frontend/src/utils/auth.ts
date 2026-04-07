@@ -25,6 +25,35 @@ const USER_KEY = "el_user";
 
 export const getToken = () => localStorage.getItem(TOKEN_KEY);
 
+/**
+ * Giải mã payload của JWT Token (phần ở giữa)
+ */
+export const decodeToken = (token: string | null) => {
+  if (!token) return null;
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+
+    return JSON.parse(jsonPayload);
+  } catch (err) {
+    console.error("Lỗi khi giải mã Token:", err);
+    return null;
+  }
+};
+
+/**
+ * Kiểm tra xem người dùng hiện tại có phải là ADMIN dựa trên TOKEN đã ký
+ * Điều này an toàn hơn so với việc chỉ kiểm tra role trong localStorage
+ */
+export const isAdminToken = () => {
+  const token = getToken();
+  const decoded = decodeToken(token);
+  return decoded && decoded.role === "ADMIN";
+};
+
 export const getUser = (): AuthUser | null => {
   const raw = localStorage.getItem(USER_KEY);
   if (!raw || raw === "undefined") return null;
