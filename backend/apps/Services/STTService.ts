@@ -38,25 +38,51 @@ export class STTService {
 
   /**
    * Real STT implementation using OpenAI Whisper
+   * Now includes automatic conversion to standard WAV if needed
    */
   async speechToText(audioPath: string, expectedText: string): Promise<string> {
     if (!this.openai) {
       console.warn(`STT ERROR: No OpenAI API key provided for ${audioPath}`);
-      return ""; // Return empty to indicate failure
+      return ""; 
     }
 
+    let processingPath = audioPath;
+    let isConverted = false;
+
     try {
+      // 1. Convert to standardized WAV if not already or if recommended
+      // Whisper supports many formats, but 16kHz Mono WAV is most reliable for short clips
+      if (!audioPath.endsWith(".wav")) {
+        try {
+          processingPath = await this.convertAudio(audioPath);
+          isConverted = true;
+        } catch (convErr) {
+          console.error("Conversion failed, attempting with original file:", convErr);
+          processingPath = audioPath;
+        }
+      }
+
+      // 2. Transcribe
       const response = await this.openai.audio.transcriptions.create({
-        file: fs.createReadStream(audioPath),
+        file: fs.createReadStream(processingPath),
         model: "whisper-1",
-        language: "en"
+        language: "en",
+        prompt: expectedText // Use expected text as hint for better accuracy
       });
 
       return response.text;
     } catch (err: any) {
       console.error("OpenAI Whisper Error:", err);
-      // Do not fallback to expected text!
       return "";
+    } finally {
+      // 3. Clean up the converted file if it was created
+      if (isConverted && fs.existsSync(processingPath)) {
+        try {
+          fs.unlinkSync(processingPath);
+        } catch (e) {
+          console.error("Failed to delete temp wav file:", e);
+        }
+      }
     }
   }
 }

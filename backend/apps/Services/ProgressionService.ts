@@ -11,13 +11,27 @@ export class ProgressionService {
     if (xpToAdd <= 0) return null;
 
     const db = DatabaseConnection.getMongoClient().db();
-    const user = await db.collection(USER_COLLECTION).findOne({ _id: new ObjectId(userId) }) as User;
+    
+    // 1. Increment points directly in DB
+    const updateResult = await db.collection(USER_COLLECTION).findOneAndUpdate(
+      { _id: new ObjectId(userId) },
+      { 
+        $inc: { 
+          points: xpToAdd,
+          totalXP: xpToAdd
+        },
+        $set: {
+          updatedAt: new Date()
+        }
+      },
+      { returnDocument: "after" }
+    );
+
+    const user = updateResult as unknown as User;
     if (!user) return null;
 
-    const currentPoints = user.points || 0;
-    const newTotalXP = currentPoints + xpToAdd;
-
-    // Determine new Level based on XP thresholds in DB
+    // 2. Determine and update Level based on new score
+    const newTotalXP = user.points || 0;
     const levels = await db.collection(LEVEL_COLLECTION).find().sort({ order: 1 }).toArray();
     let newLevelName: EngLevel = (user.level || "A1") as EngLevel;
     
@@ -27,20 +41,20 @@ export class ProgressionService {
       }
     }
 
-    // Apply changes to User (using both naming conventions for safety)
-    await db.collection(USER_COLLECTION).updateOne(
-      { _id: new ObjectId(userId) },
-      { 
-        $set: { 
-          points: newTotalXP,
-          level: newLevelName,
-          totalXP: newTotalXP,
-          currentLevel: newLevelName,
-          updatedAt: new Date()
-        } 
-      }
-    );
+    if (newLevelName !== user.level) {
+      await db.collection(USER_COLLECTION).updateOne(
+        { _id: new ObjectId(userId) },
+        { 
+          $set: { 
+            level: newLevelName,
+            currentLevel: newLevelName
+          } 
+        }
+      );
+      user.level = newLevelName;
+      user.currentLevel = newLevelName;
+    }
 
-    return await db.collection(USER_COLLECTION).findOne({ _id: new ObjectId(userId) }) as User;
+    return user;
   }
 }

@@ -1,8 +1,9 @@
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, ObjectId } from "mongodb";
 import { Lesson } from "../Entity/Lesson";
 import { ILessonService } from "../interfaces/services/LessonService";
 import { LessonRepository } from "../Repository/LessonRepository";
 import { DatabaseConnection } from "../Database/Database";
+import { AppError } from "../utils/AppError";
 
 export class LessonService implements ILessonService {
   private client: MongoClient;
@@ -36,6 +37,18 @@ export class LessonService implements ILessonService {
   }
 
   async remove(id: string) {
+    // Kiểm tra ràng buộc câu văn
+    const sentenceCount = await this.database.collection("sentences").countDocuments({ 
+      lesson_id: new ObjectId(id) 
+    });
+
+    if (sentenceCount > 0) {
+      throw new AppError(
+        `Không thể xóa bài học này vì vẫn còn ${sentenceCount} câu văn liên quan. Vui lòng xóa các câu văn trước.`,
+        400
+      );
+    }
+
     await this.lessonRepo.remove(id);
   }
 }

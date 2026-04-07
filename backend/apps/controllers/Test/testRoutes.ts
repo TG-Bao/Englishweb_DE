@@ -5,9 +5,9 @@ import { AuthMiddleware } from "../../middleware/authMiddleware";
 const router = Router();
 const controller = new TestController();
 
-router.get("/", controller.getAllTests);
-router.get("/:id", controller.getTestById);
-router.post("/:id/submit", controller.submitTest);
+router.get("/", AuthMiddleware.authenticate, controller.getAllTests);
+router.get("/:id", AuthMiddleware.authenticate, controller.getTestById);
+router.post("/:id/submit", AuthMiddleware.authenticate, controller.submitTest);
 
 // Admin Routes
 router.post("/", AuthMiddleware.authenticate, AuthMiddleware.authorize(["ADMIN"]), controller.createTest);

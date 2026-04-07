@@ -60,8 +60,8 @@ export class AuthService implements IAuthService {
   }
 
   async updateProfile(userId: string, data: any) {
-    // Prevent updating level manually through profile update
-    const { level, currentLevel, points, totalXP, ...updateData } = data;
+    // SECURITY FIX: Chặn việc cập nhật quyền (role) và các chỉ số (level, points) trái phép qua profile update
+    const { role, level, currentLevel, points, totalXP, ...updateData } = data;
     
     const user = await this.userRepo.updateById(userId, updateData);
     if (!user) {
