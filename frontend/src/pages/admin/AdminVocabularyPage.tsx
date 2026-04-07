@@ -5,7 +5,7 @@ import { api } from "../../api/client";
 import { topicService } from "../../services/TopicService";
 
 interface Topic { _id: string; title: string; order?: number; level?: string; }
-interface Vocabulary { _id: string; word: string; meaning: string; topic: string; level: string; example?: string; phonetic?: string; topicId: string; }
+interface Vocabulary { _id: string; word: string; meaning: string; topic: string; level: string; example?: string; exampleVi?: string; definitionVi?: string; phonetic?: string; audioUrl?: string; topicId: string; }
 
 export const AdminVocabularyPage = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -13,8 +13,11 @@ export const AdminVocabularyPage = () => {
   const [vocabTopicId, setVocabTopicId] = useState("");
   const [word, setWord] = useState("");
   const [meaning, setMeaning] = useState("");
+  const [definitionVi, setDefinitionVi] = useState("");
   const [example, setExample] = useState("");
+  const [exampleVi, setExampleVi] = useState("");
   const [phonetic, setPhonetic] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
   const [editVocabId, setEditVocabId] = useState("");
   const [vSearch, setVSearch] = useState("");
   const [notification, setNotification] = useState<{ message: string; type: "success" | "error" | null }>({ message: "", type: null });
@@ -42,8 +45,11 @@ export const AdminVocabularyPage = () => {
     if (v) {
       setWord(v.word);
       setMeaning(v.meaning);
+      setDefinitionVi(v.definitionVi || "");
       setExample(v.example || "");
+      setExampleVi(v.exampleVi || "");
       setPhonetic(v.phonetic || "");
+      setAudioUrl(v.audioUrl || "");
       setVocabTopicId(v.topicId);
     }
   }, [editVocabId, vocabularies]);
@@ -73,8 +79,11 @@ export const AdminVocabularyPage = () => {
       
       setWord("");
       setMeaning("");
+      setDefinitionVi("");
       setExample("");
+      setExampleVi("");
       setPhonetic("");
+      setAudioUrl("");
       setEditVocabId("");
     } catch (err: any) {
       console.error("Action failed", err);
@@ -114,17 +123,31 @@ export const AdminVocabularyPage = () => {
               <input style={inputStyle} value={word} onChange={e => setWord(e.target.value)} placeholder="VD: accountant" />
             </div>
             <div>
-              <label style={labelStyle}>Nghĩa (Meaning)</label>
+              <label style={labelStyle}>Nghĩa chính</label>
               <input style={inputStyle} value={meaning} onChange={e => setMeaning(e.target.value)} placeholder="VD: kế toán viên" />
             </div>
           </div>
           <div style={{ marginBottom: "16px" }}>
-            <label style={labelStyle}>Ví dụ (Example)</label>
+            <label style={labelStyle}>Định nghĩa / Giải thích (Tiếng Việt)</label>
+            <input style={inputStyle} value={definitionVi} onChange={e => setDefinitionVi(e.target.value)} placeholder="VD: Người chuyên làm công việc ghi chép và tính toán các khoản thu chi..." />
+          </div>
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>Ví dụ tiếng Anh (Example)</label>
             <textarea style={{ ...inputStyle, resize: "none" }} rows={2} value={example} onChange={e => setExample(e.target.value)} placeholder="VD: She works as an accountant at a bank." />
           </div>
-          <div style={{ marginBottom: "24px" }}>
-            <label style={labelStyle}>Phiên âm (Tùy chọn)</label>
-            <input style={inputStyle} placeholder="VD: /əˈkaʊntənt/" value={phonetic} onChange={e => setPhonetic(e.target.value)} />
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>Bản dịch ví dụ (Tiếng Việt)</label>
+            <input style={inputStyle} value={exampleVi} onChange={e => setExampleVi(e.target.value)} placeholder="VD: Cô ấy làm kế toán tại một ngân hàng." />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "24px" }}>
+            <div>
+              <label style={labelStyle}>Phiên âm (Phonetic)</label>
+              <input style={inputStyle} placeholder="VD: /əˈkaʊntənt/" value={phonetic} onChange={e => setPhonetic(e.target.value)} />
+            </div>
+            <div>
+              <label style={labelStyle}>URL Âm thanh (Audio)</label>
+              <input style={inputStyle} placeholder="Link file .mp3" value={audioUrl} onChange={e => setAudioUrl(e.target.value)} />
+            </div>
           </div>
           
           <div style={{ display: "flex", gap: "12px" }}>
@@ -138,10 +161,13 @@ export const AdminVocabularyPage = () => {
                   topicId: vocabTopicId,
                   word,
                   meaning,
+                  definitionVi,
                   example: example || "No example",
+                  exampleVi,
                   topic: currentTopic?.title || "General",
                   level: currentTopic?.level || "A1",
                   phonetic,
+                  audioUrl,
                 };
 
                 if (editVocabId) {
@@ -157,7 +183,10 @@ export const AdminVocabularyPage = () => {
             </button>
             {editVocabId && (
               <button 
-                onClick={() => { setEditVocabId(""); setWord(""); setMeaning(""); setExample(""); setPhonetic(""); }}
+                onClick={() => { 
+                  setEditVocabId(""); setWord(""); setMeaning(""); setDefinitionVi(""); 
+                  setExample(""); setExampleVi(""); setPhonetic(""); setAudioUrl(""); 
+                }}
                 style={{ padding: "14px 20px", background: "#f1f5f9", color: "#64748b", border: "none", borderRadius: "12px", fontWeight: 600, cursor: "pointer" }}
               >
                 Hủy

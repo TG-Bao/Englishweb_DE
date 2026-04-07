@@ -10,7 +10,9 @@ export const validateCreateVocabulary = (payload: any): CreateVocabularyDto => {
     topic: requireString(payload?.topic, "topic"),
     level: requireString(payload?.level, "level"),
     phonetic: optionalString(payload?.phonetic),
-    audioUrl: optionalString(payload?.audioUrl)
+    audioUrl: optionalString(payload?.audioUrl),
+    definitionVi: optionalString(payload?.definitionVi),
+    exampleVi: optionalString(payload?.exampleVi)
   };
 };
 
@@ -24,5 +26,7 @@ export const validateUpdateVocabulary = (payload: any): UpdateVocabularyDto => {
   if (payload?.level !== undefined) dto.level = requireString(payload.level, "level");
   if (payload?.phonetic !== undefined) dto.phonetic = optionalString(payload.phonetic);
   if (payload?.audioUrl !== undefined) dto.audioUrl = optionalString(payload.audioUrl);
+  if (payload?.definitionVi !== undefined) dto.definitionVi = optionalString(payload.definitionVi);
+  if (payload?.exampleVi !== undefined) dto.exampleVi = optionalString(payload.exampleVi);
   return dto;
 };

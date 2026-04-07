@@ -87,33 +87,39 @@ export class StatisticService {
 
   private calculateStreak(dates: Date[]): number {
     if (dates.length === 0) return 0;
-    const sortedDates = [...new Set(dates.map(d => d.toDateString()))]
-      .map(s => new Date(s))
-      .sort((a, b) => b.getTime() - a.getTime());
+    
+    // 1. Chuẩn hóa danh sách ngày (chỉ lấy YYYY-MM-DD, loại bỏ giờ phút giây)
+    const uniqueDates = Array.from(new Set(dates.map(d => {
+      const copy = new Date(d);
+      copy.setHours(0, 0, 0, 0);
+      return copy.getTime();
+    }))).sort((a, b) => b - a);
 
-    let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayTime = today.getTime();
 
-    // If the most recent activity was not today or yesterday, streak is 0
-    const mostRecent = sortedDates[0];
-    const diffToToday = today.getTime() - mostRecent.getTime();
-    
-    if (diffToToday > 86400000) { // More than 24 hours ago
+    const yesterdayTime = todayTime - 86400000;
+
+    // 2. Nếu ngày gần nhất không phải hôm nay hoặc hôm qua, streak về 0
+    const mostRecentTime = uniqueDates[0];
+    if (mostRecentTime < yesterdayTime) {
       return 0;
     }
 
-    streak = 1;
-    let checkDate = mostRecent;
+    // 3. Đếm ngược từ ngày gần nhất
+    let streak = 1;
+    let expectedTime = mostRecentTime - 86400000;
 
-    for (let i = 1; i < sortedDates.length; i++) {
-        const diff = checkDate.getTime() - sortedDates[i].getTime();
-        if (diff === 86400000) {
-            streak++;
-            checkDate = sortedDates[i];
-        } else {
-            break;
-        }
+    for (let i = 1; i < uniqueDates.length; i++) {
+      if (uniqueDates[i] === expectedTime) {
+        streak++;
+        expectedTime -= 86400000;
+      } else if (uniqueDates[i] < expectedTime) {
+        // Có khoảng trống trong chuỗi ngày
+        break;
+      }
+      // Trường hợp uniqueDates[i] > expectedTime không xảy ra do đã sort và distinct
     }
 
     return streak;

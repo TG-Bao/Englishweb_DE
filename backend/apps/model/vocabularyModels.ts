@@ -5,6 +5,8 @@ export class CreateVocabularyDto {
   example!: string;
   topic!: string;
   level!: string;
+  definitionVi?: string;
+  exampleVi?: string;
   phonetic?: string;
   audioUrl?: string;
   constructor() {}
@@ -17,6 +19,8 @@ export class UpdateVocabularyDto {
   example?: string;
   topic?: string;
   level?: string;
+  definitionVi?: string;
+  exampleVi?: string;
   phonetic?: string;
   audioUrl?: string;
   constructor() {}

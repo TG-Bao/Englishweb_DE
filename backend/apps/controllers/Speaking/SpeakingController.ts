@@ -67,6 +67,14 @@ export class SpeakingController {
 
     } catch (err: any) {
       console.error("Speaking process error:", err);
+      // Xóa file nếu gặp lỗi trong quá trình xử lý AI hoặc Database
+      if (file && fs.existsSync(file.path)) {
+        try {
+          fs.unlinkSync(file.path);
+        } catch (unlinkErr) {
+          console.error("Failed to delete file after error:", unlinkErr);
+        }
+      }
       return next(new AppError(err.message, 500));
     }
   });

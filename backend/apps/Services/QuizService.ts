@@ -1,8 +1,9 @@
-import { MongoClient, Db } from "mongodb";
+import { MongoClient, Db, ObjectId } from "mongodb";
 import { Quiz } from "../Entity/Quiz";
 import { IQuizService } from "../interfaces/services/QuizService";
 import { QuizRepository } from "../Repository/QuizRepository";
 import { DatabaseConnection } from "../Database/Database";
+import { AppError } from "../utils/AppError";
 
 export class QuizService implements IQuizService {
   private client: MongoClient;
@@ -40,6 +41,18 @@ export class QuizService implements IQuizService {
   }
 
   async remove(id: string) {
+    // Kiểm tra ràng buộc câu hỏi
+    const questionCount = await this.database.collection("questions").countDocuments({ 
+      quizId: new ObjectId(id) 
+    });
+
+    if (questionCount > 0) {
+      throw new AppError(
+        `Không thể xóa bài kiểm tra này vì vẫn còn ${questionCount} câu hỏi liên quan. Vui lòng xóa các câu hỏi trước.`,
+        400
+      );
+    }
+
     await this.quizRepo.remove(id);
   }
 
